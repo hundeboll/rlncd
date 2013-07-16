@@ -7,7 +7,12 @@ top = '.'
 out = 'build'
 
 def options(opt):
-    opt.load('compiler_c++ c_config boost')
+    try:
+        opt.load('boost')
+    except ImportError as e:
+        pass
+
+    opt.load('compiler_c++ c_config')
     opt.add_option('--profiler', action='store_true', default=False, help='Enable google CPU profiler')
     opt.add_option('--kodo', action='store', default='../kodo', help='Path to kodo checkout')
     opt.add_option('--kodo_bundle', action='store', default='../kodo/bundle_dependencies', help='Path to kodo dependencies (fifi, sak, etc)')
