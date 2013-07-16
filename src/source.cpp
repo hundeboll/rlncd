@@ -34,6 +34,8 @@ void sigint(int signal)
 int main(int argc, char **argv)
 {
     std::string usage("Encode packets with Random Linear Network Coding\n");
+    FLAGS_alsologtostderr = true;
+    FLAGS_colorlogtostderr = true;
     google::HandleCommandLineCompletions();
     google::SetUsageMessage(usage);
     google::ParseCommandLineFlags(&argc, &argv, true);
