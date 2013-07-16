@@ -114,11 +114,14 @@ void encoder::process_req(struct nl_msg *msg)
     attr = attrs[BATADV_HLP_A_SEQ];
     seq  = nla_get_u16(attr);
 
-    if (rank == this->rank())
+    if (rank == this->rank() || seq == m_last_req_seq) {
+        VLOG(LOG_CTRL) << "dropping request (block: " << m_block
+                       << ", his rank: " << rank
+                       << ", our rank: " << this->rank()
+                       << ", his seq: " << seq
+                       << ", our seq: " << m_last_req_seq;
         return;
-
-    if (seq == m_last_req_seq)
-        return;
+    }
 
     m_credits += source_budget(this->rank() - rank, 255, 255, m_e3);
 
