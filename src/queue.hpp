@@ -45,12 +45,25 @@ class prio_queue
         return Value();
     }
 
-    size_t size()
+    size_t priority_next() const
+    {
+        size_t ret = m_queues.size();
+        typename Outer::const_reverse_iterator it;
+
+        for (it = m_queues.crbegin(); it != m_queues.crend(); ++it) {
+            --ret;
+            if (!it->empty())
+                return ret;
+        }
+        return ret;
+    }
+
+    size_t size() const
     {
         return m_size;
     }
 
-    bool empty()
+    bool empty() const
     {
         return m_size == 0;
     }

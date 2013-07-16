@@ -110,6 +110,14 @@ class queue_test : public ::testing::Test {
         clear();
     }
 
+    void test_next_priority()
+    {
+        size_t next_prio = m_max_priority / 2;
+        m_queue.push(next_prio, 10);
+        ASSERT_EQ(next_prio, m_queue.priority_next());
+        clear();
+    }
+
   public:
     queue_test() : m_queue(m_max_priority)
     {}
@@ -127,4 +135,9 @@ TEST_F(queue_test, order)
     test_pop();
     test_clear();
     test_mixed();
+}
+
+TEST_F(queue_test, api)
+{
+    test_next_priority();
 }
