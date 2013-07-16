@@ -169,14 +169,16 @@ void decoder::send_ack()
     CHECK_EQ(nla_put_u8(msg, BATADV_HLP_A_TYPE, ACK_PACKET), 0);
     CHECK_EQ(nla_put_u16(msg, BATADV_HLP_A_INT, 0), 0);
 
+    VLOG(LOG_CTRL) << "ack (block: " << m_block
+                   << ", budget: " << budget << ")";
+
     if (m_io) {
-        for (; budget >= 1; --budget) {
+        for (; budget >= 0; --budget) {
             nlmsg_get(msg);
             m_io->add_msg(REQ_PACKET, msg);
         }
     }
 
-    VLOG(LOG_CTRL) << "ack (block: " << m_block << ")";
     nlmsg_free(msg);
 }
 
@@ -198,16 +200,18 @@ void decoder::send_req()
     CHECK_EQ(nla_put_u16(msg, BATADV_HLP_A_RANK, this->rank()), 0);
     CHECK_EQ(nla_put_u16(msg, BATADV_HLP_A_SEQ, m_req_seq), 0);
 
+    VLOG(LOG_CTRL) << "req (block: " << m_block
+                   << ", rank: " << this->rank()
+                   << ", seq: " << m_req_seq
+                   << ", budget: " << budget << ")";
+
     if (m_io) {
-        for (; budget >= 1; --budget) {
+        for (; budget >= 0; --budget) {
             nlmsg_get(msg);
             m_io->add_msg(REQ_PACKET, msg);
         }
     }
 
-    VLOG(LOG_CTRL) << "req (block: " << m_block
-                   << ", rank: " << this->rank()
-                   << ", seq: " << m_req_seq << ")";
     nlmsg_free(msg);
     m_req_seq++;
 }
@@ -293,9 +297,9 @@ void decoder::thread_func()
 template<>
 void decoder::init()
 {
-    m_e1 = FLAGS_e1;
-    m_e2 = FLAGS_e2;
-    m_e3 = FLAGS_e3;
+    m_e1 = FLAGS_e1*2.55;
+    m_e2 = FLAGS_e2*2.55;
+    m_e3 = FLAGS_e3*2.55;
     m_running = true;
     m_req_seq = 1;
     m_enc_count = 0;
