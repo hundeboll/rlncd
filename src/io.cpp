@@ -92,8 +92,8 @@ void io::netlink_register()
 {
     struct nl_msg *msg = CHECK_NOTNULL(nlmsg_alloc());
 
-    genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, family(), 0, NLM_F_REQUEST,
-                BATADV_HLP_C_REGISTER, 1);
+    CHECK_NOTNULL(genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, family(), 0,
+                NLM_F_REQUEST, BATADV_HLP_C_REGISTER, 1));
 
     CHECK_GE(nla_put_string(msg, BATADV_HLP_A_IFNAME, FLAGS_interface.c_str()), 0)
         << "IO: Failed to put ifname attribute";

@@ -51,16 +51,17 @@ void encoder::send_encoded()
     if (!m_io)
         return;
 
-    msg = nlmsg_alloc();
-    genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, m_io->family(),
-                0, 0, BATADV_HLP_C_FRAME, 1);
+    msg = CHECK_NOTNULL(nlmsg_alloc());
+    CHECK_NOTNULL(genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, m_io->family(),
+                              0, 0, BATADV_HLP_C_FRAME, 1));
 
-    nla_put_u32(msg, BATADV_HLP_A_IFINDEX, m_io->ifindex());
-    nla_put(msg, BATADV_HLP_A_SRC, ETH_ALEN, m_src);
-    nla_put(msg, BATADV_HLP_A_DST, ETH_ALEN, m_dst);
-    nla_put_u16(msg, BATADV_HLP_A_BLOCK, m_block);
-    nla_put_u8(msg, BATADV_HLP_A_TYPE, ENC_PACKET);
-    attr = nla_reserve(msg, BATADV_HLP_A_FRAME, this->payload_size());
+    CHECK_EQ(nla_put_u32(msg, BATADV_HLP_A_IFINDEX, m_io->ifindex()), 0);
+    CHECK_EQ(nla_put(msg, BATADV_HLP_A_SRC, ETH_ALEN, m_src), 0);
+    CHECK_EQ(nla_put(msg, BATADV_HLP_A_DST, ETH_ALEN, m_dst), 0);
+    CHECK_EQ(nla_put_u16(msg, BATADV_HLP_A_BLOCK, m_block), 0);
+    CHECK_EQ(nla_put_u8(msg, BATADV_HLP_A_TYPE, ENC_PACKET), 0);
+    attr = CHECK_NOTNULL(nla_reserve(msg, BATADV_HLP_A_FRAME,
+                                     this->payload_size()));
     data = reinterpret_cast<uint8_t *>(nla_data(attr));
 
     this->encode(data);
