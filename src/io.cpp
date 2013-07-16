@@ -279,6 +279,11 @@ void io::add_msg_unlocked(uint8_t type, struct nl_msg *msg)
 
 void io::add_msg(uint8_t type, struct nl_msg *msg)
 {
+    size_t len = nlmsg_total_size(nlmsg_datalen(nlmsg_hdr(msg)));
+
+    LOG_IF(ERROR, len > 1600) << "message too long (type: " << type
+                              << ", length" << len << ")";
+
     write_lock();
     add_msg_unlocked(type, msg);
     write_unlock();
