@@ -1,7 +1,7 @@
 #pragma once
 
 #include <netlink/netlink.h>
-#include <boost/range/adaptor/reversed.hpp>
+#include <glog/logging.h>
 #include <deque>
 #include <queue>
 
@@ -36,6 +36,7 @@ class prio_queue
             m_size--;
             break;
         }
+        LOG(WARNING) << "tried to pop empty queue (size: " << m_size << ")";
     }
 
     Value top() const
