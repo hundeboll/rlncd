@@ -228,7 +228,7 @@ void io::write_thread()
     struct nl_msg *msg;
     auto lambda = [](io *i){ return !i->m_running || !i->m_write_queue.empty(); };
     auto cond_func = std::bind(lambda, this);
-    size_t prio;
+    int res;
 
     while (true) {
         std::unique_lock<std::mutex> l(m_write_lock);
@@ -238,7 +238,6 @@ void io::write_thread()
             break;
 
         msg = m_write_queue.top();
-        prio = m_write_queue.priority_next();
         m_write_queue.pop();
 
         l.unlock();
@@ -247,11 +246,11 @@ void io::write_thread()
             continue;
 
         if (m_nlsock) {
-            VLOG(LOG_IO) << "send message";
-            CHECK_GE(nl_send_auto(m_nlsock, msg), 0);
+            res = nl_send_auto(m_nlsock, msg);
+            LOG_IF(FATAL, res < 0) << "nl_send_auto() failed: "
+                                   << nl_geterror(res) << "(" << res << ")";
         }
 
-        LOG(INFO) << "free message: " << prio;
         nlmsg_free(msg);
     }
 
