@@ -92,8 +92,8 @@ void io::netlink_register()
 {
     struct nl_msg *msg = CHECK_NOTNULL(nlmsg_alloc());
 
-    genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, family(), 0, NLM_F_REQUEST,
-                BATADV_HLP_C_REGISTER, 1);
+    CHECK_NOTNULL(genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, family(), 0,
+                NLM_F_REQUEST, BATADV_HLP_C_REGISTER, 1));
 
     CHECK_GE(nla_put_string(msg, BATADV_HLP_A_IFNAME, FLAGS_interface.c_str()), 0)
         << "IO: Failed to put ifname attribute";
@@ -228,6 +228,7 @@ void io::write_thread()
     struct nl_msg *msg;
     auto lambda = [](io *i){ return !i->m_running || !i->m_write_queue.empty(); };
     auto cond_func = std::bind(lambda, this);
+    int res, len;
 
     while (true) {
         std::unique_lock<std::mutex> l(m_write_lock);
@@ -244,12 +245,23 @@ void io::write_thread()
         if (!msg)
             continue;
 
+        len = nlmsg_total_size(nlmsg_datalen(nlmsg_hdr(msg)));
+        LOG_IF(ERROR, len > 1600 || len < 0)
+            << "message too long ("
+            << ", length: " << len
+            << ", msg *: " << msg << ")";
+
         if (m_nlsock) {
-            VLOG(LOG_IO) << "send message";
-            nl_send_auto(m_nlsock, msg);
+            res = nl_send_auto(m_nlsock, msg);
+            LOG_IF(ERROR, res < 0) << "nl_send_auto() failed with " << res
+                                   << ": " << nl_geterror(res) << " (" << errno
+                                   << ": " << strerror(errno) << ")";
+            LOG_IF(ERROR, res < 0 && errno == 90) << "length too long: "
+                << nlmsg_total_size(nlmsg_datalen(nlmsg_hdr(msg)));
         }
 
-        nlmsg_free(msg);
+        if (res >= 0 || m_nlsock == NULL)
+            nlmsg_free(msg);
     }
 
     VLOG(LOG_INIT) << "write exit";

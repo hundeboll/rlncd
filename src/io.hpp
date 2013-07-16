@@ -54,7 +54,7 @@ class io
   public:
     typedef std::shared_ptr<io> pointer;
 
-    io() : m_write_queue(PACKET_NUM + 1), m_free_queue(1)
+    io() : m_write_queue(PACKET_NUM + 1, NULL), m_free_queue(1, NULL)
     {}
     ~io();
     void start();
