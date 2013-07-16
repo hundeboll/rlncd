@@ -50,6 +50,8 @@ class prio_queue
             if (!it->empty())
                 return it->front();
 
+        LOG(WARNING) << "tried to get top from empty queue (size: "
+                     << m_size << ")";
         return m_default;
     }
 
