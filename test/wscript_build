@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+bld.program(
+    features = 'cxx cxxprogram',
+    source   = ['rlncd_tests.cpp'] + bld.path.ant_glob('src/*.cpp'),
+    target   = 'rlncd_tests',
+    use      = ['rlncd_includes', 'gtest', 'io']
+)

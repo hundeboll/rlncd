@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+def build(bld):
+    bld.objects(
+            source='io.cpp',
+            target='io',
+            includes=['/usr/include/libnl3'],
+            export_includes=['/usr/include/libnl3'],
+            use=['gflags', 'glog', 'nl-3', 'nl-genl-3', 'encoder']
+    )
+
+    bld.objects(
+            source='counters.cpp',
+            target='counters',
+            use='BOOST'
+    )
+
+    bld.objects(
+            source=['encoder_map.cpp', 'encoder.cpp'],
+            target='encoder',
+            includes=['/usr/include/libnl3'],
+            use='kodo gflags',
+    )
+
+    bld(
+            export_includes=[bld.env.KODO, bld.env.FIFI, bld.env.SAK],
+            name='kodo'
+    )
+
+    bld(
+            use=['io', 'counters', 'gflags', 'glog'],
+            name='libs'
+    )
+
+    bld.program(
+            target='source',
+            source='source.cpp',
+            use=['libs', 'kodo']
+    )
+
+    bld.program(
+            target='helper',
+            source='helper.cpp',
+            use=['libs', 'kodo']
+    )
+
+    bld.program(
+            target='relay',
+            source='relay.cpp',
+            use=['libs', 'kodo']
+    )
+
+    bld.program(
+            target='destination',
+            source='destination.cpp',
+            use=['libs', 'kodo']
+    )
