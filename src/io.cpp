@@ -226,11 +226,11 @@ void io::read_thread()
 void io::write_thread()
 {
     struct nl_msg *msg;
-    std::unique_lock<std::mutex> l(m_write_lock);
     auto lambda = [](io *i){ return !i->m_running || !i->m_write_queue.empty(); };
     auto cond_func = std::bind(lambda, this);
 
     while (true) {
+        std::unique_lock<std::mutex> l(m_write_lock);
         m_write_cond.wait(l, cond_func);
 
         if (!m_running)
@@ -238,6 +238,8 @@ void io::write_thread()
 
         msg = m_write_queue.top();
         m_write_queue.pop();
+
+        l.unlock();
 
         if (!msg)
             continue;
