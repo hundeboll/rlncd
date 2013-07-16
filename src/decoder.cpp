@@ -257,6 +257,7 @@ void decoder::process_timer()
     if (diff.count() >= pkt_timeout && !this->is_partial_complete()) {
         send_req();
         m_timeout -= pkt_timeout;
+        m_timestamp = timer::now();
         return;
     }
 }
