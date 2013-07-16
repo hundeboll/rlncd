@@ -1,7 +1,7 @@
 #pragma once
 
 #include <netlink/netlink.h>
-#include <boost/range/adaptor/reversed.hpp>
+#include <glog/logging.h>
 #include <deque>
 #include <queue>
 
@@ -21,6 +21,9 @@ class prio_queue
 
     void push(size_t prio, Value val)
     {
+        LOG_IF(FATAL, prio > m_queues.size() - 1) << "priority too high: "
+                                                  << prio << " > "
+                                                  << (m_queues.size() - 1);
         m_queues[prio].push_back(val);
         m_size++;
     }
@@ -34,8 +37,9 @@ class prio_queue
 
             it->pop_front();
             m_size--;
-            break;
+            return;
         }
+        LOG(WARNING) << "tried to pop empty queue (size: " << m_size << ")";
     }
 
     Value top() const
@@ -46,6 +50,8 @@ class prio_queue
             if (!it->empty())
                 return it->front();
 
+        LOG(WARNING) << "tried to get top from empty queue (size: "
+                     << m_size << ")";
         return m_default;
     }
 
