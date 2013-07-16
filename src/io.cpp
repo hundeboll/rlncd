@@ -247,12 +247,15 @@ void io::write_thread()
 
         if (m_nlsock) {
             res = nl_send_auto(m_nlsock, msg);
-            LOG_IF(FATAL, res < 0) << "nl_send_auto() failed with " << res
-                                   << ": " << nl_geterror(res) << "/" << errno
+            LOG_IF(ERROR, res < 0) << "nl_send_auto() failed with " << res
+                                   << ": " << nl_geterror(res) << " (" << errno
                                    << ": " << strerror(errno) << ")";
+            LOG_IF(ERROR, res < 0 && errno == 90) << "length too long: "
+                << nlmsg_total_size(nlmsg_datalen(nlmsg_hdr(msg)));
         }
 
-        nlmsg_free(msg);
+        if (res >= 0 || m_nlsock == NULL)
+            nlmsg_free(msg);
     }
 
     VLOG(LOG_INIT) << "write exit";
