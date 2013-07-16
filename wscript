@@ -12,13 +12,20 @@ def options(opt):
     except ImportError as e:
         pass
 
-    opt.load('compiler_c++ c_config')
+    opt.load('compiler_cxx')
     opt.add_option('--profiler', action='store_true', default=False, help='Enable google CPU profiler')
     opt.add_option('--kodo', action='store', default='../kodo', help='Path to kodo checkout')
     opt.add_option('--kodo_bundle', action='store', default='../kodo/bundle_dependencies', help='Path to kodo dependencies (fifi, sak, etc)')
 
 def configure(cfg):
-    cfg.load('compiler_c++ boost')
+    #
+    # use clang++ by default
+    #
+    cfg.add_os_flags('CXX')
+    if not cfg.env.CXX:
+        cfg.env.append_unique('CXX', ['clang++'])
+
+    cfg.load('compiler_cxx boost')
 
     #
     # kodo
