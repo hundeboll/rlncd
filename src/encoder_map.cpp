@@ -151,8 +151,10 @@ bool encoder_map::add_req(struct nl_msg *msg, struct nlattr **attrs)
     std::lock_guard<std::mutex> lock(m_encoders_lock);
 
     map_type::iterator it = m_encoders.find(block_id);
-    if (it == m_encoders.end())
+    if (it == m_encoders.end()) {
+        VLOG(LOG_CTRL) << "dropping req (block: " << block_id << ")";
         return false;
+    }
 
     it->second->add_req(msg);
     return true;
