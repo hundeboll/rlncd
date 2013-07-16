@@ -248,7 +248,7 @@ void io::write_thread()
 
         if (m_nlsock) {
             VLOG(LOG_IO) << "send message";
-            CHECK_GE(0, nl_send_auto(m_nlsock, msg));
+            CHECK_GE(nl_send_auto(m_nlsock, msg, 0));
         }
 
         LOG(INFO) << "free message: " << prio;
