@@ -13,6 +13,10 @@ DEFINE_bool(benchmark, false, "Bounce frames upon reception");
 DEFINE_int32(encoders, 2, "Number of concurrent encoder.");
 DEFINE_double(encoder_timeout, 1, "Time to wait for more packets before "
                                   "dropping encoder generation.");
+DEFINE_double(decoder_timeout, 1, "Time to wait for more packets before "
+                                  "dropping decoder generation.");
+DEFINE_double(packet_timeout, .3, "Time to wait for more packets before "
+                                       "requesting more data");
 DEFINE_double(fixed_overshoot, 1.06, "Fixed factor to increase "
                                      "encoder/recoder budgets.");
 DEFINE_int32(e1, 10, "Error probability from source to helper in percentage.");

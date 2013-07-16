@@ -7,7 +7,7 @@ def build(bld):
             target='io',
             includes=['/usr/include/libnl3'],
             export_includes=['/usr/include/libnl3'],
-            use=['gflags', 'glog', 'nl-3', 'nl-genl-3', 'encoder']
+            use=['gflags', 'glog', 'nl-3', 'nl-genl-3', 'encoder', 'decoder']
     )
 
     bld.objects(
@@ -23,6 +23,13 @@ def build(bld):
             use='kodo gflags',
     )
 
+    bld.objects(
+            source=['decoder_map.cpp', 'decoder.cpp'],
+            target='decoder',
+            includes=['/usr/include/libnl3'],
+            use=['kodo'],
+    )
+
     bld(
             export_includes=[bld.env.KODO, bld.env.FIFI, bld.env.SAK],
             name='kodo'
@@ -36,23 +43,5 @@ def build(bld):
     bld.program(
             target='source',
             source='source.cpp',
-            use=['libs', 'kodo']
-    )
-
-    bld.program(
-            target='helper',
-            source='helper.cpp',
-            use=['libs', 'kodo']
-    )
-
-    bld.program(
-            target='relay',
-            source='relay.cpp',
-            use=['libs', 'kodo']
-    )
-
-    bld.program(
-            target='destination',
-            source='destination.cpp',
             use=['libs', 'kodo']
     )

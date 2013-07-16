@@ -18,7 +18,9 @@
 #include "io-api.hpp"
 
 class encoder_map;
+class decoder_map;
 typedef std::weak_ptr<encoder_map> encoder_map_ptr;
+typedef std::weak_ptr<decoder_map> decoder_map_ptr;
 
 class io
 {
@@ -45,6 +47,7 @@ class io
     /* Producer/consumber members */
     prio_queue<struct nl_msg *> m_write_queue, m_free_queue;
     encoder_map_ptr m_encoder_map;
+    decoder_map_ptr m_decoder_map;
 
     static int read_wrapper(struct nl_msg *msg, void *arg)
     {
@@ -76,6 +79,11 @@ class io
     void set_encoder_map(encoder_map_ptr enc)
     {
         m_encoder_map = enc;
+    }
+
+    void set_decoder_map(decoder_map_ptr dec)
+    {
+        m_decoder_map = dec;
     }
 
     uint32_t family() const

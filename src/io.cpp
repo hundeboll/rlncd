@@ -4,6 +4,7 @@
 #include <iostream>
 #include "logging.hpp"
 #include "encoder_map.hpp"
+#include "decoder_map.hpp"
 #include "io.hpp"
 
 DECLARE_string(interface);
@@ -138,6 +139,8 @@ void io::handle_frame(struct nl_msg *msg, struct nlattr **attrs)
             break;
 
         case ENC_PACKET:
+            if (auto decoder_map = m_decoder_map.lock())
+                decoder_map->add_enc(msg, attrs);
             break;
 
 /*
