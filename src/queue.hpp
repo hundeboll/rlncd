@@ -39,7 +39,7 @@ class prio_queue
             m_size--;
             return;
         }
-        LOG(WARNING) << "tried to pop empty queue (size: " << m_size << ")";
+        LOG(FATAL) << "tried to pop empty queue (size: " << m_size << ")";
     }
 
     Value top() const
@@ -50,7 +50,7 @@ class prio_queue
             if (!it->empty())
                 return it->front();
 
-        LOG(WARNING) << "tried to get top from empty queue (size: "
+        LOG(FATAL) << "tried to get top from empty queue (size: "
                      << m_size << ")";
         return m_default;
     }
