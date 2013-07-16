@@ -10,9 +10,13 @@ class prio_queue
 {
     Outer m_queues;
     size_t m_size = {0};
+    Value m_default;
 
   public:
     prio_queue(size_t num) : m_queues(num)
+    {}
+
+    prio_queue(size_t num, Value defult) : m_queues(num), m_default(defult)
     {}
 
     void push(size_t prio, Value val)
@@ -42,7 +46,7 @@ class prio_queue
             if (!it->empty())
                 return it->front();
 
-        return Value();
+        return m_default;
     }
 
     size_t priority_next() const
