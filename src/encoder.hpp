@@ -87,7 +87,7 @@ class full_rlnc_encoder_deep
     }
 
   public:
-    full_rlnc_encoder_deep() : m_msg_queue(PACKET_NUM)
+    full_rlnc_encoder_deep() : m_msg_queue(PACKET_NUM, NULL)
     {}
     ~full_rlnc_encoder_deep();
     void init();
