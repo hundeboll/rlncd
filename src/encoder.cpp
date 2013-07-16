@@ -70,16 +70,13 @@ void encoder::send_encoded()
 }
 
 template<>
-void encoder::process_plain(struct nl_msg *msg)
+void encoder::process_plain(struct nl_msg *msg, struct nlattr **attrs)
 {
-    struct nlmsghdr *nlh = nlmsg_hdr(msg);
-    struct genlmsghdr *gnlh = (struct genlmsghdr *)nlmsg_data(nlh);
-    struct nlattr *attrs[BATADV_HLP_A_NUM], *attr;
+    struct nlattr *attr;
     uint8_t *data, *buf;
     uint16_t len;
 
     /* get data from netlink message */
-    genlmsg_parse(nlh, 0, attrs, BATADV_HLP_A_MAX, NULL);
     attr = attrs[BATADV_HLP_A_FRAME];
     data = static_cast<uint8_t *>(nla_data(attr));
     len = nla_len(attr);
@@ -102,11 +99,9 @@ void encoder::process_plain(struct nl_msg *msg)
 }
 
 template<>
-void encoder::process_req(struct nl_msg *msg)
+void encoder::process_req(struct nl_msg *msg, struct nlattr **attrs)
 {
-    struct nlmsghdr *nlh = nlmsg_hdr(msg);
-    struct genlmsghdr *gnlh = (struct genlmsghdr *)nlmsg_data(nlh);
-    struct nlattr *attrs[BATADV_HLP_A_NUM], *attr;
+    struct nlattr *attr;
     size_t rank, seq;
 
     attr = attrs[BATADV_HLP_A_RANK];
@@ -148,11 +143,11 @@ void encoder::process_msg(struct nl_msg *msg)
     type = nla_get_u8(attrs[BATADV_HLP_A_TYPE]);
     switch (type) {
         case PLAIN_PACKET:
-            process_plain(msg);
+            process_plain(msg, attrs);
             break;
 
         case REQ_PACKET:
-            process_req(msg);
+            process_req(msg, attrs);
             break;
 
         default:

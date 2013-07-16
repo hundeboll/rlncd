@@ -72,9 +72,8 @@ class full_rlnc_encoder_deep
 
     void free_queue();
     void send_encoded();
-    void process_plain(struct nl_msg *msg);
-    void process_ack(struct nl_msg *msg);
-    void process_req(struct nl_msg *msg);
+    void process_plain(struct nl_msg *msg, struct nlattr **attrs);
+    void process_req(struct nl_msg *msg, struct nlattr **attrs);
     void process_msg(struct nl_msg *msg);
     void process_queue();
     void process_encoder();
