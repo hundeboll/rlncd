@@ -21,6 +21,9 @@ class prio_queue
 
     void push(size_t prio, Value val)
     {
+        LOG_IF(FATAL, prio > m_queues.size() - 1) << "priority too high: "
+                                                  << prio << " > "
+                                                  << (m_queues.size() - 1);
         m_queues[prio].push_back(val);
         m_size++;
     }
