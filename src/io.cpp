@@ -229,13 +229,12 @@ void io::read_thread()
 void io::write_thread()
 {
     struct nl_msg *msg;
-    auto lambda = [](io *i){ return !i->m_running || !i->m_write_queue.empty(); };
-    auto cond_func = std::bind(lambda, this);
     int res, len;
 
     while (true) {
         std::unique_lock<std::mutex> l(m_write_lock);
-        m_write_cond.wait(l, cond_func);
+        while (m_running && m_write_queue.empty())
+            m_write_cond.wait(l);
 
         if (!m_running)
             break;
