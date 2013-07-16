@@ -248,7 +248,8 @@ void io::write_thread()
         if (m_nlsock) {
             res = nl_send_auto(m_nlsock, msg);
             LOG_IF(FATAL, res < 0) << "nl_send_auto() failed: "
-                                   << nl_geterror(res) << "(" << res << ")";
+                                   << nl_geterror(res) << " (" << res << "/"
+                                   << errno << ")";
         }
 
         nlmsg_free(msg);
