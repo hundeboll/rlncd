@@ -34,7 +34,7 @@ class prio_queue
 
             it->pop_front();
             m_size--;
-            break;
+            return;
         }
         LOG(WARNING) << "tried to pop empty queue (size: " << m_size << ")";
     }
