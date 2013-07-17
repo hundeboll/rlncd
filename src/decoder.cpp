@@ -55,6 +55,7 @@ void decoder::send_dec(size_t index)
     VLOG(LOG_PKT) << "decoded (block: " << block()
                   << ", index: " << index << ")";
     m_decoded_symbols[index] = true;
+    counters_increment("dec");
 }
 
 void decoder::process_enc(struct nl_msg *msg, struct nlattr **attrs)
@@ -112,6 +113,7 @@ void decoder::process_msg(struct nl_msg *msg)
     switch (type) {
         case ENC_PACKET:
             process_enc(msg, attrs);
+            counters_increment("enc");
             break;
 
         default:
@@ -163,6 +165,7 @@ void decoder::send_ack()
 
     VLOG(LOG_CTRL) << "ack (block: " << block() << ")";
     m_io->add_msg(REQ_PACKET, msg);
+    counters_increment("ack");
 }
 
 void decoder::send_req()
@@ -187,6 +190,7 @@ void decoder::send_req()
 
     m_io->add_msg(REQ_PACKET, msg);
     m_req_seq++;
+    counters_increment("req");
 }
 
 void decoder::process_decoder()
@@ -196,6 +200,7 @@ void decoder::process_decoder()
     if (this->is_complete() && !m_decoded) {
         VLOG(LOG_GEN) << "decoded (block: " << block() << ")";
         m_decoded = true;
+        counters_increment("decoded");
 
         for (; budget >= 1; --budget)
             send_ack();
@@ -210,6 +215,7 @@ void decoder::process_decoder()
         for (size_t i = 0; i < this->rank(); ++i)
             send_dec(i);
 
+        counters_increment("partial");
         m_decoded = true;
         return;
     }

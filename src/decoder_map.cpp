@@ -7,6 +7,7 @@ decoder::pointer decoder_map::create_decoder(uint8_t id, uint8_t block)
     dec->dec_id(id);
     dec->block(block);
     dec->set_io(m_io);
+    dec->counters(counters());
 
     return dec;
 }

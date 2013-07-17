@@ -12,6 +12,7 @@
 #include <memory>
 
 #include "io.hpp"
+#include "counters.hpp"
 #include "encoder.hpp"
 
 DECLARE_int32(symbol_size);
@@ -19,7 +20,7 @@ DECLARE_int32(symbols);
 
 using kodo::encoder;
 
-class encoder_map : public io_base
+class encoder_map : public io_base, public counters_api
 {
     encoder::factory m_factory;
     std::vector<encoder::pointer> m_encoders;
@@ -47,7 +48,10 @@ class encoder_map : public io_base
   public:
     typedef std::shared_ptr<encoder_map> pointer;
 
-    encoder_map() : m_factory(FLAGS_symbols, FLAGS_symbol_size) {}
+    encoder_map() : m_factory(FLAGS_symbols, FLAGS_symbol_size)
+    {
+        counters_group("encoder");
+    }
     void add_plain(struct nl_msg *msg, struct nlattr **attrs);
     void add_ack(struct nl_msg *msg, struct nlattr **attrs);
     void add_req(struct nl_msg *msg, struct nlattr **attrs);

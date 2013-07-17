@@ -17,6 +17,7 @@ void encoder::free_queue()
         msg = m_msg_queue.top();
         nlmsg_free(msg);
         m_msg_queue.pop();
+        counters_increment("free");
     }
 }
 
@@ -61,6 +62,7 @@ void encoder::send_encoded()
     m_io->add_msg(ENC_PACKET, msg);
     m_credits -= m_credits >= 1 ? 1 : 0;
     m_enc_count++;
+    counters_increment("enc");
 }
 
 void encoder::process_plain(struct nl_msg *msg, struct nlattr **attrs)
@@ -135,10 +137,12 @@ void encoder::process_msg(struct nl_msg *msg)
     switch (type) {
         case PLAIN_PACKET:
             process_plain(msg, attrs);
+            counters_increment("plain");
             break;
 
         case REQ_PACKET:
             process_req(msg, attrs);
+            counters_increment("req");
             break;
 
         default:
@@ -183,40 +187,18 @@ void encoder::process_encoder()
         send_encoded();
 }
 
-void encoder::process_timer()
-{
-    resolution diff;
-
-    diff = std::chrono::duration_cast<resolution>(timer::now() - m_timestamp);
-
-    if (diff.count() <= FLAGS_encoder_timeout*1000)
-        return;
-
-    if (this->rank() == 0)
-        return;
-
-    //  LOG(ERROR) << "timeout (block: " << block()
-    //             << ", rank: " << this->rank() << ")";
-}
-
 void encoder::thread_func()
 {
     std::chrono::milliseconds interval(50);
     while (m_running) {
         process_queue();
         process_encoder();
-        process_timer();
 
         std::unique_lock<std::mutex> lock(m_queue_lock);
         m_queue_cond.wait_for(lock, interval);
     }
 
     free_queue();
-}
-
-
-void encoder::init()
-{
 }
 
 void encoder::add_msg(uint8_t type, struct nl_msg *msg)

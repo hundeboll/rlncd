@@ -10,6 +10,7 @@
 #include "io.hpp"
 #include "encoder_map.hpp"
 #include "decoder_map.hpp"
+#include "counters.hpp"
 
 DEFINE_string(interface, "bat0", "Name of interface to register");
 DEFINE_int32(symbols, 64, "The generation size, the number of packets "
@@ -50,14 +51,18 @@ int main(int argc, char **argv)
     signal(SIGINT, sigint);
     signal(SIGTERM, sigint);
 
+    counters::pointer c(new counters);
     io::pointer i(new io);
     encoder_map::pointer enc_map(new encoder_map);
     decoder_map::pointer dec_map(new decoder_map);
 
     enc_map->set_io(i);
+    enc_map->counters(c);
     enc_map->init(FLAGS_encoders);
     dec_map->set_io(i);
+    dec_map->counters(c);
 
+    i->counters(c);
     i->set_encoder_map(enc_map);
     i->set_decoder_map(dec_map);
     i->netlink_open();
@@ -68,10 +73,12 @@ int main(int argc, char **argv)
     while (running)
         std::this_thread::sleep_for(interval);
 
-    LOG(INFO) << "source exit";
+    c->print();
+
     enc_map.reset();
     dec_map.reset();
     i.reset();
+    c.reset();
 
     return 0;
 }

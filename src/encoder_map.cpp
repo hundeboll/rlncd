@@ -60,6 +60,7 @@ void encoder_map::next_encoder()
     m_encoders[m_current_encoder]->block(m_block_count++);
     m_encoders[m_current_encoder]->enc_id(m_current_encoder);
     m_encoders[m_current_encoder]->set_io(m_io);
+    m_encoders[m_current_encoder]->counters(counters());
 }
 
 void encoder_map::free_encoder(uint8_t id)
@@ -81,6 +82,7 @@ void encoder_map::add_plain(struct nl_msg *msg, struct nlattr **attrs)
     std::lock_guard<std::mutex> lock(m_encoders_lock);
     enc = current_encoder();
     if (!enc) {
+        counters_increment("drop");
         VLOG(LOG_PKT) << "drop packet";
         return;
     }
@@ -105,6 +107,7 @@ void encoder_map::add_ack(struct nl_msg *msg, struct nlattr **attrs)
 
     VLOG(LOG_CTRL) << "acked (block: " << enc->block()
                    << ", pkts: " << enc->enc_packets() << ")";
+    counters_increment("ack");
     free_encoder(enc_id);
 }
 

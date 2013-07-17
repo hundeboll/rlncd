@@ -16,13 +16,14 @@
 
 #include "queue.hpp"
 #include "io-api.hpp"
+#include "counters.hpp"
 
 class encoder_map;
 class decoder_map;
 typedef std::weak_ptr<encoder_map> encoder_map_ptr;
 typedef std::weak_ptr<decoder_map> decoder_map_ptr;
 
-class io
+class io : public counters_api
 {
     /* Members for generic netlink */
     struct nl_sock *m_nlsock = {NULL};
@@ -58,7 +59,9 @@ class io
     typedef std::shared_ptr<io> pointer;
 
     io() : m_write_queue(PACKET_NUM + 1, NULL), m_free_queue(1, NULL)
-    {}
+    {
+        counters_group("io");
+    }
     ~io();
     void start();
     void netlink_open();

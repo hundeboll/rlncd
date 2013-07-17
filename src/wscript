@@ -11,23 +11,17 @@ def build(bld):
     )
 
     bld.objects(
-            source='counters.cpp',
-            target='counters',
-            use='BOOST'
-    )
-
-    bld.objects(
             source=['encoder_map.cpp', 'encoder.cpp'],
             target='encoder',
             includes=['/usr/include/libnl3'],
-            use='kodo gflags',
+            use=['kodo', 'gflags', 'pthread'],
     )
 
     bld.objects(
             source=['decoder_map.cpp', 'decoder.cpp'],
             target='decoder',
             includes=['/usr/include/libnl3'],
-            use=['kodo'],
+            use=['kodo', 'gflags', 'pthread'],
     )
 
     bld(
@@ -36,12 +30,18 @@ def build(bld):
     )
 
     bld(
-            use=['io', 'counters', 'gflags', 'glog'],
+            use=['io', 'gflags', 'glog'],
             name='libs'
     )
 
     bld.program(
             target='source',
             source='source.cpp',
-            use=['libs', 'kodo']
+            use=['libs', 'kodo', 'rt', 'pthread']
+    )
+
+    bld.program(
+            target='counters',
+            source='counters.cpp',
+            use=['rt', 'pthread'],
     )

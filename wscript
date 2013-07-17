@@ -69,7 +69,7 @@ def configure(cfg):
     # libs
     #
     cfg.check_boost()
-    cfg.check(features='cxx cxxprogram', lib='pthread')
+    cfg.check(features='cxx cxxprogram', lib='pthread', uselib_store='pthread')
     cfg.check(features='cxx cxxprogram', lib='rt', uselib_store='rt')
     cfg.check(features='cxx cxxprogram', lib='nl-3', uselib_store='nl-3')
     cfg.check(features='cxx cxxprogram', lib='nl-genl-3', uselib_store='nl-genl-3')
@@ -79,7 +79,7 @@ def configure(cfg):
     if cfg.options.profiler:
         cfg.check(features='cxx cxxprogram', lib='profiler', uselib_store='profiler')
 
-    cfg.env.append_unique('CXXFLAGS', ['-std=c++11', '-pthread', '-g'])
+    cfg.env.append_unique('CXXFLAGS', ['-std=c++11', '-g'])
     env = cfg.get_env()
 
     cfg.setenv('tsan', env)

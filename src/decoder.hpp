@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "io.hpp"
+#include "counters.hpp"
 #include "queue.hpp"
 #include "systematic_decoder.hpp"
 
@@ -48,7 +49,10 @@ class decoder_base
                  > > > > > > > > > > > > > > >
 {};
 
-class decoder : public io_base, public decoder_base<fifi::binary8>
+class decoder
+  : public io_base,
+    public counters_api,
+    public decoder_base<fifi::binary8>
 {
     typedef std::chrono::high_resolution_clock timer;
     typedef timer::time_point timestamp;
@@ -90,7 +94,9 @@ class decoder : public io_base, public decoder_base<fifi::binary8>
 
   public:
     decoder() : m_msg_queue(PACKET_NUM, NULL)
-    {}
+    {
+        counters_group("decoder");
+    }
     ~decoder();
     void add_enc(struct nl_msg *msg);
 
@@ -108,6 +114,7 @@ class decoder : public io_base, public decoder_base<fifi::binary8>
     void initialize(Factory &factory)
     {
         decoder_base::initialize(factory);
+        counters_increment("generations");
 
         m_decoded = false;
         m_idle = false;

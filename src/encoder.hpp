@@ -12,6 +12,7 @@
 #include <chrono>
 
 #include "logging.hpp"
+#include "counters.hpp"
 #include "budgets.hpp"
 #include "queue.hpp"
 #include "io-api.hpp"
@@ -58,7 +59,10 @@ class encoder_base
            encoder> > > > > > > > > > > > > > > > >
 {};
 
-class encoder : public io_base, public encoder_base<fifi::binary8>
+class encoder
+  : public io_base,
+    public counters_api,
+    public encoder_base<fifi::binary8>
 {
     typedef std::chrono::high_resolution_clock timer;
     typedef timer::time_point timestamp;
@@ -85,7 +89,6 @@ class encoder : public io_base, public encoder_base<fifi::binary8>
     void process_msg(struct nl_msg *msg);
     void process_queue();
     void process_encoder();
-    void process_timer();
     void thread_func();
     void add_msg(uint8_t type, struct nl_msg *msg);
 
@@ -101,6 +104,7 @@ class encoder : public io_base, public encoder_base<fifi::binary8>
 
         memcpy(m_src, src, ETH_ALEN);
         memcpy(m_dst, dst, ETH_ALEN);
+        counters_increment("generations");
     }
 
   public:
@@ -109,10 +113,10 @@ class encoder : public io_base, public encoder_base<fifi::binary8>
         m_e1 = FLAGS_e1*2.55;
         m_e2 = FLAGS_e2*2.55;
         m_e3 = FLAGS_e3*2.55;
+        counters_group("encoder");
     }
 
     ~encoder();
-    void init();
     void add_plain(struct nl_msg *msg);
 
     template<class Factory>

@@ -134,11 +134,13 @@ void io::handle_frame(struct nl_msg *msg, struct nlattr **attrs)
 {
     switch (nla_get_u8(attrs[BATADV_HLP_A_TYPE])) {
         case PLAIN_PACKET:
+            counters_increment("plain");
             if (auto encoder_map = m_encoder_map.lock())
                 encoder_map->add_plain(msg, attrs);
             break;
 
         case ENC_PACKET:
+            counters_increment("enc");
             if (auto decoder_map = m_decoder_map.lock())
                 decoder_map->add_enc(msg, attrs);
             break;
@@ -153,11 +155,13 @@ void io::handle_frame(struct nl_msg *msg, struct nlattr **attrs)
             break;
 */
         case REQ_PACKET:
+            counters_increment("req");
             if (auto encoder_map = m_encoder_map.lock())
                 encoder_map->add_req(msg, attrs);
             break;
 
         case ACK_PACKET:
+            counters_increment("ack");
             if (auto encoder_map = m_encoder_map.lock())
                 encoder_map->add_ack(msg, attrs);
             break;
@@ -171,6 +175,7 @@ int io::read_msg(struct nl_msg *msg, void *arg)
     struct nlattr *attrs[BATADV_HLP_A_NUM];
 
     genlmsg_parse(nlh, 0, attrs, BATADV_HLP_A_MAX, NULL);
+    counters_increment("rx");
 
     switch (gnlh->cmd) {
         case BATADV_HLP_C_REGISTER:
@@ -206,6 +211,7 @@ void io::process_free_queue()
     std::lock_guard<std::mutex> lock(m_free_lock);
 
     while (m_free_queue.size()) {
+        counters_increment("free");
         VLOG(LOG_IO) << "free message";
         msg = m_free_queue.top();
         m_free_queue.pop();
@@ -260,6 +266,7 @@ void io::write_thread()
                                    << ": " << strerror(errno) << ")";
             LOG_IF(ERROR, res < 0 && errno == 90) << "length too long: "
                 << nlmsg_total_size(nlmsg_datalen(nlmsg_hdr(msg)));
+            counters_increment("tx");
         }
 
         if (res >= 0 || m_nlsock == NULL)
