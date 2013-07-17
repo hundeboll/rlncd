@@ -102,9 +102,11 @@ def build(bld):
 
 from waflib.Build import BuildContext
 class debug(BuildContext):
+    '''build with thread sanitizer'''
     cmd = 'tsan'
     variant = 'tsan'
 
 class debug(BuildContext):
+    '''build with address sanitizer'''
     cmd = 'asan'
     variant = 'asan'
