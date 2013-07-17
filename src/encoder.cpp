@@ -3,16 +3,11 @@
 
 #include "encoder.hpp"
 #include "io-api.hpp"
-#include "budgets.hpp"
 
-DECLARE_int32(e1);
-DECLARE_int32(e2);
-DECLARE_int32(e3);
 DECLARE_double(encoder_timeout);
 
 namespace kodo {
 
-template<>
 void encoder::free_queue()
 {
     struct nl_msg *msg;
@@ -25,8 +20,7 @@ void encoder::free_queue()
     }
 }
 
-template<>
-encoder::~full_rlnc_encoder_deep()
+encoder::~encoder()
 {
     m_running = false;
 
@@ -41,7 +35,6 @@ encoder::~full_rlnc_encoder_deep()
         delete[] m_symbol_storage;
 }
 
-template<>
 void encoder::send_encoded()
 {
     struct nl_msg *msg;
@@ -58,7 +51,7 @@ void encoder::send_encoded()
     CHECK_EQ(nla_put_u32(msg, BATADV_HLP_A_IFINDEX, m_io->ifindex()), 0);
     CHECK_EQ(nla_put(msg, BATADV_HLP_A_SRC, ETH_ALEN, m_src), 0);
     CHECK_EQ(nla_put(msg, BATADV_HLP_A_DST, ETH_ALEN, m_dst), 0);
-    CHECK_EQ(nla_put_u16(msg, BATADV_HLP_A_BLOCK, m_block), 0);
+    CHECK_EQ(nla_put_u16(msg, BATADV_HLP_A_BLOCK, uid()), 0);
     CHECK_EQ(nla_put_u8(msg, BATADV_HLP_A_TYPE, ENC_PACKET), 0);
     attr = CHECK_NOTNULL(nla_reserve(msg, BATADV_HLP_A_FRAME,
                                      this->payload_size()));
@@ -70,7 +63,6 @@ void encoder::send_encoded()
     m_enc_count++;
 }
 
-template<>
 void encoder::process_plain(struct nl_msg *msg, struct nlattr **attrs)
 {
     struct nlattr *attr;
@@ -94,12 +86,11 @@ void encoder::process_plain(struct nl_msg *msg, struct nlattr **attrs)
 
     /* increment credits to send encoded packets */
     m_credits += source_credit(m_e1, m_e2, m_e3);
-    VLOG(LOG_PKT) << "add plain (block: " << m_block
+    VLOG(LOG_PKT) << "add plain (block: " << block()
                   << ", rank: " << this->rank()
                   << ", credits: " << m_credits << ")";
 }
 
-template<>
 void encoder::process_req(struct nl_msg *msg, struct nlattr **attrs)
 {
     struct nlattr *attr;
@@ -111,7 +102,7 @@ void encoder::process_req(struct nl_msg *msg, struct nlattr **attrs)
     seq  = nla_get_u16(attr);
 
     if (rank == this->rank() || seq == m_last_req_seq) {
-        VLOG(LOG_CTRL) << "dropping request (block: " << m_block
+        VLOG(LOG_CTRL) << "dropping request (block: " << block()
                        << ", his rank: " << rank
                        << ", our rank: " << this->rank()
                        << ", his seq: " << seq
@@ -121,7 +112,7 @@ void encoder::process_req(struct nl_msg *msg, struct nlattr **attrs)
 
     m_credits += source_budget(this->rank() - rank, 255, 255, m_e3);
 
-    VLOG(LOG_CTRL) << "req (block: " << m_block
+    VLOG(LOG_CTRL) << "req (block: " << block()
                    << ", his rank: " << rank
                    << ", our rank: " << this->rank()
                    << ", his seq: " << seq
@@ -131,7 +122,6 @@ void encoder::process_req(struct nl_msg *msg, struct nlattr **attrs)
     m_last_req_seq = seq;
 }
 
-template<>
 void encoder::process_msg(struct nl_msg *msg)
 {
     struct nlmsghdr *nlh = nlmsg_hdr(msg);
@@ -159,7 +149,6 @@ void encoder::process_msg(struct nl_msg *msg)
     m_timestamp = timer::now();
 }
 
-template<>
 void encoder::process_queue()
 {
     struct nl_msg *msg;
@@ -182,7 +171,6 @@ void encoder::process_queue()
     }
 }
 
-template<>
 void encoder::process_encoder()
 {
     while (m_running && m_credits >= 1)
@@ -195,7 +183,6 @@ void encoder::process_encoder()
         send_encoded();
 }
 
-template<>
 void encoder::process_timer()
 {
     resolution diff;
@@ -208,12 +195,10 @@ void encoder::process_timer()
     if (this->rank() == 0)
         return;
 
-    LOG(ERROR) << "timeout (block: " << m_block
-               << ", rank: " << this->rank() << ")";
-    m_running = false;
+    //  LOG(ERROR) << "timeout (block: " << block()
+    //             << ", rank: " << this->rank() << ")";
 }
 
-template<>
 void encoder::thread_func()
 {
     std::chrono::milliseconds interval(50);
@@ -229,30 +214,11 @@ void encoder::thread_func()
     free_queue();
 }
 
-template<>
+
 void encoder::init()
 {
-    m_e1 = FLAGS_e1*2.55;
-    m_e2 = FLAGS_e2*2.55;
-    m_e3 = FLAGS_e3*2.55;
-    m_budget = source_budget(this->symbols(), m_e1, m_e2, m_e3);
-    m_last_req_seq = 0;
-    m_plain_count = 0;
-    m_enc_count = 0;
-    m_running = true;
-    m_credits = 0;
-    m_timestamp = timer::now();
-    m_symbol_storage = new uint8_t[this->block_size()];
-
-    VLOG(LOG_GEN) << "init (block: " << m_block
-                  << ", budget: " << m_budget << ")";
-
-    /* use locks to prevent data race due to reordering */
-    std::lock_guard<std::mutex> queue_lock(m_queue_lock);
-    m_thread = std::thread(std::bind(&encoder::thread_func, this));
 }
 
-template<>
 void encoder::add_msg(uint8_t type, struct nl_msg *msg)
 {
     nlmsg_get(msg);
@@ -260,7 +226,6 @@ void encoder::add_msg(uint8_t type, struct nl_msg *msg)
     m_queue_cond.notify_one();
 }
 
-template<>
 void encoder::add_plain(struct nl_msg *msg)
 {
     std::lock_guard<std::mutex> lock(m_queue_lock);

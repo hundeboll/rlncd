@@ -12,16 +12,22 @@
 #include <chrono>
 
 #include "logging.hpp"
+#include "budgets.hpp"
 #include "queue.hpp"
 #include "io-api.hpp"
 #include "io.hpp"
 
+DECLARE_int32(e1);
+DECLARE_int32(e2);
+DECLARE_int32(e3);
+
 namespace kodo {
 
+class encoder;
+
 template<class Field>
-class full_rlnc_encoder_deep
-    : public io_base,
-      public
+class encoder_base
+    : public
            // Payload Codec API
            payload_encoder<
            // Codec Header API
@@ -49,8 +55,10 @@ class full_rlnc_encoder_deep
            // Factory API
            final_coder_factory<
            // Final type
-           full_rlnc_encoder_deep<Field
-               > > > > > > > > > > > > > > > > > >
+           encoder> > > > > > > > > > > > > > > > >
+{};
+
+class encoder : public io_base, public encoder_base<fifi::binary8>
 {
     typedef std::chrono::high_resolution_clock timer;
     typedef timer::time_point timestamp;
@@ -68,7 +76,7 @@ class full_rlnc_encoder_deep
     std::atomic<uint8_t> m_e1, m_e2, m_e3;
     double m_credits = {0}, m_budget = {0};
     uint8_t *m_symbol_storage, m_src[ETH_ALEN], m_dst[ETH_ALEN];
-    uint16_t m_block;
+    uint8_t m_block, m_encoder;
 
     void free_queue();
     void send_encoded();
@@ -86,51 +94,6 @@ class full_rlnc_encoder_deep
         return m_symbol_storage + i * this->symbol_size();
     }
 
-  public:
-    full_rlnc_encoder_deep() : m_msg_queue(PACKET_NUM, NULL)
-    {}
-    ~full_rlnc_encoder_deep();
-    void init();
-    void add_plain(struct nl_msg *msg);
-
-    void exit()
-    {
-        std::lock_guard<std::mutex> lock(m_queue_lock);
-        m_running = false;
-        m_queue_cond.notify_all();
-    }
-
-    bool full() const
-    {
-        return m_plain_count == this->symbols();
-    }
-
-    bool running() const
-    {
-        return m_running;
-    }
-
-    size_t enc_packets() const
-    {
-        return m_enc_count;
-    }
-
-    uint16_t block()
-    {
-        return m_block;
-    }
-
-    void set_block(uint16_t block)
-    {
-        m_block = block;
-    }
-
-    void add_req(struct nl_msg *msg)
-    {
-        std::lock_guard<std::mutex> lock(m_queue_lock);
-        add_msg(REQ_PACKET, msg);
-    }
-
     void read_address(struct nlattr **attrs)
     {
         void *src = nla_data(attrs[BATADV_HLP_A_SRC]);
@@ -139,8 +102,91 @@ class full_rlnc_encoder_deep
         memcpy(m_src, src, ETH_ALEN);
         memcpy(m_dst, dst, ETH_ALEN);
     }
+
+  public:
+    encoder() : m_msg_queue(PACKET_NUM, NULL)
+    {
+        m_e1 = FLAGS_e1*2.55;
+        m_e2 = FLAGS_e2*2.55;
+        m_e3 = FLAGS_e3*2.55;
+    }
+
+    ~encoder();
+    void init();
+    void add_plain(struct nl_msg *msg);
+
+    template<class Factory>
+    void construct(Factory &factory)
+    {
+        size_t data_size = factory.max_symbols() * factory.max_symbol_size();
+
+        encoder_base::construct(factory);
+
+        LOG(INFO) << "constructed new encoder";
+        CHECK_NE(data_size, 0);
+        m_symbol_storage = CHECK_NOTNULL(new uint8_t[data_size]);
+
+        /* use locks to prevent data race due to reordering */
+        std::lock_guard<std::mutex> queue_lock(m_queue_lock);
+        m_thread = std::thread(std::bind(&encoder::thread_func, this));
+    }
+
+    template<class Factory>
+    void initialize(Factory &factory)
+    {
+        encoder_base::initialize(factory);
+
+        m_budget = source_budget(this->symbols(), m_e1, m_e2, m_e3);
+        m_timestamp = timer::now();
+        m_last_req_seq = 0;
+        m_plain_count = 0;
+        m_enc_count = 0;
+        m_credits = 0;
+
+        VLOG(LOG_GEN) << "init (block: " << block()
+                      << ", budget: " << m_budget << ")";
+    }
+
+    bool full() const
+    {
+        return m_plain_count == this->symbols();
+    }
+
+    size_t block() const
+    {
+        return m_block;
+    }
+
+    size_t enc_id() const
+    {
+        return m_encoder;
+    }
+
+    uint16_t uid() const
+    {
+        return (m_encoder << 8) | m_block;
+    }
+
+    size_t enc_packets() const
+    {
+        return m_enc_count;
+    }
+
+    void block(uint8_t block)
+    {
+        m_block = block;
+    }
+
+    void enc_id(uint8_t enc)
+    {
+        m_encoder = enc;
+    }
+
+    void add_req(struct nl_msg *msg)
+    {
+        std::lock_guard<std::mutex> lock(m_queue_lock);
+        add_msg(REQ_PACKET, msg);
+    }
 };
 
-typedef full_rlnc_encoder_deep<fifi::binary8> encoder;
-
-}  // namespace kodo
+};  // namespace kodo

@@ -11,12 +11,15 @@
 #include "queue.hpp"
 #include "systematic_decoder.hpp"
 
+DECLARE_double(decoder_timeout);
+
 namespace kodo {
 
+class decoder;
+
 template<class Field>
-class full_rlnc_decoder_deep
-    : public io_base,
-      public
+class decoder_base
+    : public
              // Payload API
              payload_decoder<
              // Codec Header API
@@ -41,8 +44,11 @@ class full_rlnc_decoder_deep
              // Factory API
              final_coder_factory<
              // Final type
-             full_rlnc_decoder_deep<Field>
+             decoder
                  > > > > > > > > > > > > > > >
+{};
+
+class decoder : public io_base, public decoder_base<fifi::binary8>
 {
     typedef std::chrono::high_resolution_clock timer;
     typedef timer::time_point timestamp;
@@ -54,11 +60,11 @@ class full_rlnc_decoder_deep
     std::thread m_thread;
     std::mutex m_queue_lock;
     std::condition_variable m_queue_cond;
-    std::atomic<uint16_t> m_block;
+    std::atomic<uint8_t> m_block, m_dec_id;
     std::atomic<size_t> m_enc_count;
     std::atomic<bool> m_running = {true};
     std::vector<bool> m_decoded_symbols;
-    uint8_t m_e1, m_e2, m_e3, m_src[ETH_ALEN], m_dst[ETH_ALEN];
+    uint8_t m_src[ETH_ALEN], m_dst[ETH_ALEN];
     size_t m_req_seq, m_timeout;
 
     void send_dec(size_t index);
@@ -83,28 +89,57 @@ class full_rlnc_decoder_deep
     }
 
   public:
-    full_rlnc_decoder_deep() : m_msg_queue(PACKET_NUM, NULL)
+    decoder() : m_msg_queue(PACKET_NUM, NULL)
     {}
-    ~full_rlnc_decoder_deep();
+    ~decoder();
     void add_enc(struct nl_msg *msg);
-    void init();
 
-    void set_block(uint16_t block)
+    template<class Factory>
+    void construct(Factory &factory)
+    {
+        decoder_base::construct(factory);
+        m_decoded_symbols.resize(factory.max_symbols());
+
+        std::lock_guard<std::mutex> lock(m_queue_lock);
+        m_thread = std::thread(std::bind(&decoder::thread_func, this));
+    }
+
+    template<class Factory>
+    void initialize(Factory &factory)
+    {
+        decoder_base::initialize(factory);
+
+        m_req_seq = 1;
+        m_enc_count = 0;
+        m_timestamp = timer::now();
+        m_timeout = FLAGS_decoder_timeout*1000;
+        std::fill(m_decoded_symbols.begin(), m_decoded_symbols.end(), false);
+    }
+
+    void dec_id(uint8_t id)
+    {
+        m_dec_id = id;
+    }
+
+    void block(uint8_t block)
     {
         m_block = block;
     }
 
-    uint16_t block()
+    size_t block() const
     {
         return m_block;
     }
 
-    bool running()
+    uint8_t dec_id() const
     {
-        return m_running;
+        return m_dec_id;
+    }
+
+    uint16_t uid() const
+    {
+        return (m_dec_id << 8) | m_block;
     }
 };
-
-typedef full_rlnc_decoder_deep<fifi::binary8> decoder;
 
 };  // namespace kodo

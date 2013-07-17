@@ -56,9 +56,7 @@ int main(int argc, char **argv)
 
     enc_map->set_io(i);
     enc_map->init(FLAGS_encoders);
-
     dec_map->set_io(i);
-    dec_map->init();
 
     i->set_encoder_map(enc_map);
     i->set_decoder_map(dec_map);

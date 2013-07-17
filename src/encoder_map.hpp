@@ -7,7 +7,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
-#include <unordered_map>
+#include <vector>
+#include <deque>
 #include <memory>
 
 #include "io.hpp"
@@ -20,31 +21,35 @@ using kodo::encoder;
 
 class encoder_map : public io_base
 {
-    typedef uint16_t key_type;
-    typedef encoder::pointer value_type;
-    typedef std::unordered_map<key_type, value_type> map_type;
-    typedef std::pair<key_type, value_type> element_type;
     encoder::factory m_factory;
-    encoder::pointer m_current_encoder;
-    map_type m_encoders;
-    std::thread m_housekeeping;
+    std::vector<encoder::pointer> m_encoders;
+    std::deque<uint8_t> m_free_encoders;
     std::mutex m_encoders_lock;
-    std::atomic<uint16_t> m_block_count = {0}, m_max_encoders = {1};
-    std::atomic<bool> m_running = {true}, m_blocked = {false};
+    std::atomic<uint8_t> m_block_count = {0}, m_current_encoder = {0};
+    std::atomic<bool> m_blocked = {false};
 
-    encoder::pointer get_current_encoder();
-    encoder::pointer create_encoder();
+    encoder::pointer create_encoder(uint8_t id);
+    encoder::pointer current_encoder();
+    void next_encoder();
+    void free_encoder(uint8_t id);
     void signal_blocking(bool enable);
-    void do_housekeeping();
-    void housekeeping();
+
+    uint8_t uid_block(uint16_t uid)
+    {
+        return uid & 0xFF;
+    }
+
+    uint8_t uid_enc(uint16_t uid)
+    {
+        return uid >> 8;
+    }
 
   public:
     typedef std::shared_ptr<encoder_map> pointer;
 
     encoder_map() : m_factory(FLAGS_symbols, FLAGS_symbol_size) {}
-    ~encoder_map();
     void add_plain(struct nl_msg *msg, struct nlattr **attrs);
-    bool add_ack(struct nl_msg *msg, struct nlattr **attrs);
-    bool add_req(struct nl_msg *msg, struct nlattr **attrs);
+    void add_ack(struct nl_msg *msg, struct nlattr **attrs);
+    void add_req(struct nl_msg *msg, struct nlattr **attrs);
     void init(size_t encoder_num);
 };

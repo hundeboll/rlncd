@@ -10,53 +10,12 @@ void encoder_map::init(size_t encoder_num)
     std::lock_guard<std::mutex> lock(m_encoders_lock);
 
     VLOG(LOG_INIT) << "using " << encoder_num << " encoders";
-    m_max_encoders = encoder_num;
-    if (!m_current_encoder)
-        create_encoder();
+    m_encoders.resize(encoder_num);
 
-    m_housekeeping = std::thread(std::bind(&encoder_map::housekeeping, this));
-}
+    for (size_t i = 0; i < encoder_num; ++i)
+        m_free_encoders.push_back(i);
 
-encoder_map::~encoder_map()
-{
-    m_running = false;
-
-    if (m_housekeeping.joinable())
-        m_housekeeping.join();
-}
-
-void encoder_map::do_housekeeping()
-{
-    std::lock_guard<std::mutex> lock(m_encoders_lock);
-
-    if (m_current_encoder && !m_current_encoder->running())
-        m_current_encoder.reset();
-
-    for (auto it = std::begin(m_encoders); it != std::end(m_encoders);) {
-        if (!it->second) {
-            it = m_encoders.erase(it);
-        } else if (it->second->running()) {
-            ++it;
-        } else {
-            VLOG(LOG_GEN) << "erase encoder (block: " << it->second->block()
-                          << ", rank: " << it->second->rank()
-                          << ")";
-            it = m_encoders.erase(it);
-        }
-    }
-
-    if (!m_current_encoder)
-        create_encoder();
-}
-
-void encoder_map::housekeeping()
-{
-    std::chrono::milliseconds interval(100);
-
-    while (m_running) {
-        std::this_thread::sleep_for(interval);
-        do_housekeeping();
-    }
+    next_encoder();
 }
 
 void encoder_map::signal_blocking(bool enable)
@@ -78,32 +37,40 @@ void encoder_map::signal_blocking(bool enable)
     m_blocked = enable;
 }
 
-encoder::pointer encoder_map::get_current_encoder()
+encoder::pointer encoder_map::current_encoder()
 {
-    if (m_current_encoder)
-        return m_current_encoder;
+    if (m_blocked)
+        return encoder::pointer();
 
-    return create_encoder();
+    return m_encoders[m_current_encoder];
 }
 
-encoder::pointer encoder_map::create_encoder()
+void encoder_map::next_encoder()
 {
-    if (m_encoders.size() >= m_max_encoders) {
-        m_current_encoder = encoder::pointer();
-        signal_blocking(true);
+    encoder::pointer enc;
 
-        return m_current_encoder;
+    if (m_free_encoders.empty()) {
+        signal_blocking(true);
+        return;
     }
 
-    VLOG(LOG_GEN) << "create new encoder (" << (m_block_count + 1) << ")";
-    signal_blocking(false);
-    m_current_encoder = m_factory.build();
-    m_current_encoder->set_block(++m_block_count);
-    m_current_encoder->set_io(m_io);
-    m_current_encoder->init();
-    m_encoders[m_block_count] = m_current_encoder;
+    m_current_encoder = m_free_encoders.front();
+    m_free_encoders.pop_front();
+    m_encoders[m_current_encoder] = m_factory.build();
+    m_encoders[m_current_encoder]->block(m_block_count++);
+    m_encoders[m_current_encoder]->enc_id(m_current_encoder);
+    m_encoders[m_current_encoder]->set_io(m_io);
+}
 
-    return m_current_encoder;
+void encoder_map::free_encoder(uint8_t id)
+{
+    m_free_encoders.push_back(id);
+
+    if (!m_blocked)
+        return;
+
+    next_encoder();
+    signal_blocking(false);
 }
 
 void encoder_map::add_plain(struct nl_msg *msg, struct nlattr **attrs)
@@ -111,7 +78,7 @@ void encoder_map::add_plain(struct nl_msg *msg, struct nlattr **attrs)
     encoder::pointer enc;
 
     std::lock_guard<std::mutex> lock(m_encoders_lock);
-    enc = get_current_encoder();
+    enc = current_encoder();
     if (!enc) {
         VLOG(LOG_PKT) << "drop packet";
         return;
@@ -120,42 +87,37 @@ void encoder_map::add_plain(struct nl_msg *msg, struct nlattr **attrs)
     enc->add_plain(msg);
 
     if (enc->full())
-        create_encoder();
+        next_encoder();
 }
 
-bool encoder_map::add_ack(struct nl_msg *msg, struct nlattr **attrs)
+void encoder_map::add_ack(struct nl_msg *msg, struct nlattr **attrs)
 {
-    uint16_t block_id = nla_get_u16(attrs[BATADV_HLP_A_BLOCK]);
-    encoder::pointer e;
+    uint16_t uid = nla_get_u16(attrs[BATADV_HLP_A_BLOCK]);
+    uint8_t enc_id = uid_enc(uid);
+    encoder::pointer enc;
 
     std::lock_guard<std::mutex> lock(m_encoders_lock);
-    e = m_encoders[block_id];
+    enc = m_encoders[enc_id];
 
-    if (e) {
-        m_encoders.erase(block_id);
-        VLOG(LOG_CTRL) << "acked (block: " << block_id
-                       << ", pkts: " << e->enc_packets()
-                       << ")";
-    }
+    if (enc->uid() != uid)
+        return;
 
-    if (!m_current_encoder)
-        create_encoder();
-
-    return true;
+    VLOG(LOG_CTRL) << "acked (block: " << enc->block()
+                   << ", pkts: " << enc->enc_packets() << ")";
+    free_encoder(enc_id);
 }
 
-bool encoder_map::add_req(struct nl_msg *msg, struct nlattr **attrs)
+void encoder_map::add_req(struct nl_msg *msg, struct nlattr **attrs)
 {
-    uint16_t block_id = nla_get_u16(attrs[BATADV_HLP_A_BLOCK]);
+    uint16_t uid = nla_get_u16(attrs[BATADV_HLP_A_BLOCK]);
+    uint8_t enc_id = uid_enc(uid);
+    encoder::pointer enc;
 
     std::lock_guard<std::mutex> lock(m_encoders_lock);
+    enc = m_encoders[enc_id];
 
-    map_type::iterator it = m_encoders.find(block_id);
-    if (it == m_encoders.end()) {
-        VLOG(LOG_CTRL) << "dropping req (block: " << block_id << ")";
-        return false;
-    }
+    if (enc->uid() != uid)
+        return;
 
-    it->second->add_req(msg);
-    return true;
+    enc->add_req(msg);
 }
