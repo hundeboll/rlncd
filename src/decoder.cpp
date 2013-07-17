@@ -173,7 +173,7 @@ void decoder::send_ack()
                    << ", budget: " << budget << ")";
 
     if (m_io) {
-        for (; budget >= 0; --budget) {
+        for (; budget >= 1; --budget) {
             nlmsg_get(msg);
             m_io->add_msg(REQ_PACKET, msg);
         }
@@ -206,7 +206,7 @@ void decoder::send_req()
                    << ", budget: " << budget << ")";
 
     if (m_io) {
-        for (; budget >= 0; --budget) {
+        for (; budget >= 1; --budget) {
             nlmsg_get(msg);
             m_io->add_msg(REQ_PACKET, msg);
         }
