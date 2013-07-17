@@ -67,7 +67,7 @@ void encoder_map::free_encoder(uint8_t id)
     m_free_encoders.push_back(id);
     m_encoders[id] = encoder::pointer();
 
-    if (!m_blocked)
+    if (!m_blocked && m_free_encoders.size() != m_encoders.size())
         return;
 
     next_encoder();
