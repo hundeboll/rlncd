@@ -42,7 +42,7 @@ class decoder_base
              finite_field_math<typename fifi::default_field<Field>::type,
              finite_field_info<Field,
              // Factory API
-             final_coder_factory<
+             final_coder_factory_pool<
              // Final type
              decoder
                  > > > > > > > > > > > > > > >
