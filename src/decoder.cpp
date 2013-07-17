@@ -1,10 +1,9 @@
 #include "logging.hpp"
+#include "budgets.hpp"
 #include "decoder.hpp"
 
-DECLARE_int32(e1);
-DECLARE_int32(e2);
-DECLARE_int32(e3);
 DECLARE_double(packet_timeout);
+DECLARE_int32(e3);
 
 namespace kodo {
 
@@ -192,10 +191,14 @@ void decoder::send_req()
 
 void decoder::process_decoder()
 {
+    double budget = source_budget(1, ONE, ONE, FLAGS_e3*2.55);
+
     if (this->is_complete() && !m_decoded) {
         VLOG(LOG_GEN) << "decoded (block: " << block() << ")";
         m_decoded = true;
-        send_ack();
+
+        for (; budget >= 1; --budget)
+            send_ack();
 
         for (size_t i = 0; i < this->symbols(); ++i)
             send_dec(i);
