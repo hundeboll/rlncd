@@ -65,6 +65,7 @@ void encoder_map::next_encoder()
 void encoder_map::free_encoder(uint8_t id)
 {
     m_free_encoders.push_back(id);
+    m_encoders[id] = encoder::pointer();
 
     if (!m_blocked)
         return;
@@ -99,7 +100,7 @@ void encoder_map::add_ack(struct nl_msg *msg, struct nlattr **attrs)
     std::lock_guard<std::mutex> lock(m_encoders_lock);
     enc = m_encoders[enc_id];
 
-    if (enc->uid() != uid)
+    if (!enc || enc->uid() != uid)
         return;
 
     VLOG(LOG_CTRL) << "acked (block: " << enc->block()

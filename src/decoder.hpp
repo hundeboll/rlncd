@@ -62,7 +62,7 @@ class decoder : public io_base, public decoder_base<fifi::binary8>
     std::condition_variable m_queue_cond;
     std::atomic<uint8_t> m_block, m_dec_id;
     std::atomic<size_t> m_enc_count;
-    std::atomic<bool> m_running = {true};
+    std::atomic<bool> m_running = {true}, m_decoded, m_idle;
     std::vector<bool> m_decoded_symbols;
     uint8_t m_src[ETH_ALEN], m_dst[ETH_ALEN];
     size_t m_req_seq, m_timeout;
@@ -109,6 +109,8 @@ class decoder : public io_base, public decoder_base<fifi::binary8>
     {
         decoder_base::initialize(factory);
 
+        m_decoded = false;
+        m_idle = false;
         m_req_seq = 1;
         m_enc_count = 0;
         m_timestamp = timer::now();

@@ -96,6 +96,8 @@ void decoder::process_enc(struct nl_msg *msg, struct nlattr **attrs)
         VLOG(LOG_PKT) << "encoded (block: " << block()
                       << ", rank: " << m_rank << ")";
     }
+
+    m_decoded = false;
 }
 
 void decoder::process_msg(struct nl_msg *msg)
@@ -190,8 +192,9 @@ void decoder::send_req()
 
 void decoder::process_decoder()
 {
-    if (this->is_complete()) {
+    if (this->is_complete() && !m_decoded) {
         VLOG(LOG_GEN) << "decoded (block: " << block() << ")";
+        m_decoded = true;
         send_ack();
 
         for (size_t i = 0; i < this->symbols(); ++i)
@@ -200,10 +203,11 @@ void decoder::process_decoder()
         return;
     }
 
-    if (this->is_partial_complete()) {
+    if (this->is_partial_complete() && !m_decoded) {
         for (size_t i = 0; i < this->rank(); ++i)
             send_dec(i);
 
+        m_decoded = true;
         return;
     }
 }
@@ -218,14 +222,19 @@ void decoder::process_timer()
     if (diff.count() >= pkt_timeout && !this->is_partial_complete()) {
         send_req();
         m_timestamp = timer::now();
+        m_timeout -= pkt_timeout;
         return;
     }
 
     if (diff.count() >= pkt_timeout && this->is_partial_complete()) {
         send_ack();
         m_timestamp = timer::now();
+        m_timeout -= pkt_timeout;
         return;
     }
+
+    if (diff.count() >= m_timeout)
+        m_idle = true;
 }
 
 void decoder::free_queue()
@@ -248,12 +257,16 @@ void decoder::thread_func()
     std::chrono::milliseconds interval(50);
 
     while (m_running) {
+        std::unique_lock<std::mutex> lock(m_queue_lock);
+        m_queue_cond.wait_for(lock, interval);
+        lock.unlock();
+
+        if (m_idle)
+            continue;
+
         process_queue();
         process_decoder();
         process_timer();
-
-        std::unique_lock<std::mutex> lock(m_queue_lock);
-        m_queue_cond.wait_for(lock, interval);
     }
 
     free_queue();
