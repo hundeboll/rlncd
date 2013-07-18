@@ -79,9 +79,6 @@ void encoder::process_plain(struct nl_msg *msg, struct nlattr **attrs)
     if (this->rank() == 0)
         read_address(attrs);
 
-    if (this->rank() >= this->symbols())
-        LOG(FATAL) << "adding plain packet to full encoder";
-
     /* set length and add data to encoder */
     buf = get_symbol_buffer(this->rank());
     *reinterpret_cast<uint16_t *>(buf) = len;
