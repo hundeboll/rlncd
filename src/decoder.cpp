@@ -230,9 +230,7 @@ void decoder::process_timer()
         for (; budget >= 1; --budget)
             send_req();
 
-        if (m_req_seq++ == 1)
-            m_req_timeout *= 2;
-
+        m_req_seq++;
         m_timestamp = timer::now();
         m_timeout -= m_req_timeout;
         return;
