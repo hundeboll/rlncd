@@ -228,11 +228,13 @@ void decoder::process_timer()
 
     diff = std::chrono::duration_cast<resolution>(timer::now() - m_timestamp);
 
-    if (diff.count() >= pkt_timeout && !this->is_partial_complete()) {
+    if (diff.count() >= m_req_timeout && !this->is_partial_complete()) {
         for (; budget >= 1; --budget)
             send_req();
 
-        m_req_seq++;
+        if (m_req_seq++ == 1)
+            m_req_timeout *= 2;
+
         m_timestamp = timer::now();
         m_timeout -= pkt_timeout;
         return;
