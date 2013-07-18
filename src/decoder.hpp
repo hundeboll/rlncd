@@ -13,6 +13,7 @@
 #include "systematic_decoder.hpp"
 
 DECLARE_double(decoder_timeout);
+DECLARE_double(packet_timeout);
 
 namespace kodo {
 
@@ -69,7 +70,7 @@ class decoder
     std::atomic<bool> m_running = {true}, m_decoded, m_idle;
     std::vector<bool> m_decoded_symbols;
     uint8_t m_src[ETH_ALEN], m_dst[ETH_ALEN];
-    size_t m_req_seq, m_timeout, m_req_timeout;
+    size_t m_req_seq, m_timeout, m_req_timeout, m_ack_timeout;
 
     void send_dec(size_t index);
     void send_ack();
@@ -122,7 +123,8 @@ class decoder
         m_enc_count = 0;
         m_timestamp = timer::now();
         m_timeout = FLAGS_decoder_timeout*1000;
-        m_req_timeout = FLAGS_decoder_timeout*1000;
+        m_req_timeout = FLAGS_packet_timeout*1000;
+        m_ack_timeout = FLAGS_packet_timeout*1000;
         std::fill(m_decoded_symbols.begin(), m_decoded_symbols.end(), false);
     }
 

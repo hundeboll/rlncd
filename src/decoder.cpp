@@ -2,7 +2,6 @@
 #include "budgets.hpp"
 #include "decoder.hpp"
 
-DECLARE_double(packet_timeout);
 DECLARE_int32(e3);
 
 namespace kodo {
@@ -222,7 +221,6 @@ void decoder::process_decoder()
 
 void decoder::process_timer()
 {
-    size_t pkt_timeout = FLAGS_packet_timeout*1000;
     double budget = source_budget(1, ONE, ONE, FLAGS_e3*2.55);
     resolution diff;
 
@@ -236,13 +234,13 @@ void decoder::process_timer()
             m_req_timeout *= 2;
 
         m_timestamp = timer::now();
-        m_timeout -= pkt_timeout;
+        m_timeout -= m_req_timeout;
         return;
-    } else if (diff.count() >= pkt_timeout && this->is_partial_complete()) {
+    } else if (diff.count() >= m_ack_timeout && this->is_partial_complete()) {
         for (; budget >= 1; --budget)
             send_ack();
         m_timestamp = timer::now();
-        m_timeout -= pkt_timeout;
+        m_timeout -= m_ack_timeout;
         return;
     }
 
