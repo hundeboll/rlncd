@@ -127,6 +127,7 @@ class decoder
         m_req_timeout = FLAGS_req_timeout*1000;
         m_ack_timeout = FLAGS_ack_timeout*1000;
         std::fill(m_decoded_symbols.begin(), m_decoded_symbols.end(), false);
+        free_queue();
     }
 
     void dec_id(uint8_t id)

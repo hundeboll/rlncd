@@ -15,7 +15,10 @@ void encoder::free_queue()
 
     while (m_msg_queue.size()) {
         msg = m_msg_queue.top();
-        nlmsg_free(msg);
+        if (m_io)
+            m_io->free_msg(msg);
+        else
+            nlmsg_free(msg);
         m_msg_queue.pop();
         counters_increment("free");
     }

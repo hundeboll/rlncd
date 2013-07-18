@@ -146,6 +146,7 @@ class encoder
         m_plain_count = 0;
         m_enc_count = 0;
         m_credits = 0;
+        free_queue();
 
         VLOG(LOG_GEN) << "init (block: " << block()
                       << ", budget: " << m_budget << ")";
