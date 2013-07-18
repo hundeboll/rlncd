@@ -189,7 +189,6 @@ void decoder::send_req()
                    << ", seq: " << m_req_seq << ")";
 
     m_io->add_msg(REQ_PACKET, msg);
-    m_req_seq++;
     counters_increment("req");
 }
 
@@ -230,8 +229,11 @@ void decoder::process_timer()
     diff = std::chrono::duration_cast<resolution>(timer::now() - m_timestamp);
 
     if (diff.count() >= pkt_timeout && !this->is_partial_complete()) {
-        for (; budget >= 1; --budget)
+        for (; budget >= 1; --budget) {
             send_req();
+            m_req_seq++;
+        }
+
         m_timestamp = timer::now();
         m_timeout -= pkt_timeout;
         return;
