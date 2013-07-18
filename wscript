@@ -88,7 +88,7 @@ def configure(cfg):
 
     cfg.setenv('asan', env)
     cfg.env.append_unique('CXXFLAGS', ['-fsanitize=address', '-fno-omit-frame-pointer', '-O1', '-g'])
-    cfg.env.append_unique('LINKFLAGS', ['-fsanitize=address'])
+    cfg.env.append_unique('LINKFLAGS', ['-fsanitize=address', '-fno-omit-frame-pointer'])
 
 def build(bld):
     bld(
