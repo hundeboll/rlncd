@@ -15,10 +15,12 @@ DEFINE_double(encoder_timeout, 1, "Time to wait for more packets before "
                                   "dropping encoder generation.");
 DEFINE_double(decoder_timeout, 1, "Time to wait for more packets before "
                                   "dropping decoder generation.");
-DEFINE_double(packet_timeout, .3, "Time to wait for more packets before "
-                                       "requesting more data");
 DEFINE_double(fixed_overshoot, 1.06, "Fixed factor to increase "
                                      "encoder/recoder budgets.");
+DEFINE_double(req_timeout, .5, "Time to wait for more packets before "
+                               "requesting more data");
+DEFINE_double(ack_timeout, .5, "Time to wait for next generation before "
+                               "sending another acknowledgement");
 DEFINE_int32(e1, 10, "Error probability from source to helper in percentage.");
 DEFINE_int32(e2, 10, "Error probability from helper to dest in percentage.");
 DEFINE_int32(e3, 30, "Error probability from source to dest in percentage.");

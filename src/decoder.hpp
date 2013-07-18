@@ -13,7 +13,8 @@
 #include "systematic_decoder.hpp"
 
 DECLARE_double(decoder_timeout);
-DECLARE_double(packet_timeout);
+DECLARE_double(req_timeout);
+DECLARE_double(ack_timeout);
 
 namespace kodo {
 
@@ -123,8 +124,8 @@ class decoder
         m_enc_count = 0;
         m_timestamp = timer::now();
         m_timeout = FLAGS_decoder_timeout*1000;
-        m_req_timeout = FLAGS_packet_timeout*1000;
-        m_ack_timeout = FLAGS_packet_timeout*1000;
+        m_req_timeout = FLAGS_req_timeout*1000;
+        m_ack_timeout = FLAGS_ack_timeout*1000;
         std::fill(m_decoded_symbols.begin(), m_decoded_symbols.end(), false);
     }
 
