@@ -43,7 +43,6 @@ class counters {
     managed_shared_memory m_segment;
     shm_allocator m_allocator;
     shared_map *m_counter_map;
-
     std::mutex m_lock;
 
     counters() :
@@ -62,6 +61,7 @@ class counters {
 
     void print()
     {
+        std::lock_guard<std::mutex> l(m_lock);
         for (auto i : *m_counter_map)
             std::cout << i.first << ": " << i.second << std::endl;
     }
