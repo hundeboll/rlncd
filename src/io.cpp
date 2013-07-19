@@ -105,10 +105,10 @@ void io::netlink_register()
     CHECK_GE(nla_put_u32(msg, BATADV_HLP_A_E1, FLAGS_e1), 0)
             << "IO: Failed to put e1 attribute";
 
-    CHECK_GE(nla_put_u32(msg, BATADV_HLP_A_E2, FLAGS_e2), 0)
+    CHECK_GE(nla_put_u32(msg, BATADV_HLP_A_E2, FLAGS_e3), 0)
             << "IO: Failed to put e2 attribute";
 
-    CHECK_GE(nla_put_u32(msg, BATADV_HLP_A_E3, FLAGS_e3), 0)
+    CHECK_GE(nla_put_u32(msg, BATADV_HLP_A_E3, FLAGS_e2), 0)
             << "IO: Failed to put e3 attribute";
 
     add_msg(PACKET_NUM, msg);
