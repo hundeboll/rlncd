@@ -79,19 +79,23 @@ void decoder::process_enc(struct nl_msg *msg, struct nlattr **attrs)
 
     this->decode(data);
 
-    if (this->rank() == rank)
+    if (this->rank() == rank) {
+        counters_increment("non-innovative");
         VLOG(LOG_PKT) << "non-innovative (block: " << block()
                       << ", rank: " << rank << ")";
+    }
 
     systematic = this->last_symbol_is_systematic();
     index = this->last_symbol_index();
 
     if (systematic) {
+        counters_increment("systematic");
         send_dec(index);
         VLOG(LOG_PKT) << "systematic (block: " << block()
                       << ", index: " << index
                       << ", rank: " << this->rank() << ")";
     } else {
+        counters_increment("non-systematic");
         VLOG(LOG_PKT) << "encoded (block: " << block()
                       << ", rank: " << m_rank << ")";
     }
