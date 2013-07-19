@@ -273,9 +273,11 @@ void decoder::thread_func()
         if (m_idle)
             continue;
 
+        m_init_lock.lock();
         process_queue();
         process_decoder();
         process_timer();
+        m_init_lock.unlock();
     }
 
     free_queue();

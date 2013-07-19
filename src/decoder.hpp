@@ -64,7 +64,7 @@ class decoder
     prio_queue<struct nl_msg *> m_msg_queue;
     timestamp m_timestamp;
     std::thread m_thread;
-    std::mutex m_queue_lock;
+    std::mutex m_queue_lock, m_init_lock;
     std::condition_variable m_queue_cond;
     std::atomic<uint8_t> m_block, m_dec_id;
     std::atomic<size_t> m_enc_count;
@@ -105,16 +105,16 @@ class decoder
     template<class Factory>
     void construct(Factory &factory)
     {
+        std::lock_guard<std::mutex> lock(m_init_lock);
         decoder_base::construct(factory);
         m_decoded_symbols.resize(factory.max_symbols());
-
-        std::lock_guard<std::mutex> lock(m_queue_lock);
         m_thread = std::thread(std::bind(&decoder::thread_func, this));
     }
 
     template<class Factory>
     void initialize(Factory &factory)
     {
+        std::lock_guard<std::mutex> lock(m_init_lock);
         decoder_base::initialize(factory);
         counters_increment("generations");
 

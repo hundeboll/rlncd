@@ -193,9 +193,12 @@ void encoder::process_encoder()
 void encoder::thread_func()
 {
     std::chrono::milliseconds interval(50);
+
     while (m_running) {
+        m_init_lock.lock();
         process_queue();
         process_encoder();
+        m_init_lock.unlock();
 
         std::unique_lock<std::mutex> lock(m_queue_lock);
         m_queue_cond.wait_for(lock, interval);

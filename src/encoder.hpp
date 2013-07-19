@@ -71,7 +71,7 @@ class encoder
 
     prio_queue<struct nl_msg *> m_msg_queue;
     std::thread m_thread;
-    std::mutex m_queue_lock;
+    std::mutex m_queue_lock, m_init_lock;
     std::condition_variable m_queue_cond;
     timestamp m_timestamp = {timer::now()};
     std::atomic<bool> m_running = {true};
@@ -124,20 +124,18 @@ class encoder
     {
         size_t data_size = factory.max_symbols() * factory.max_symbol_size();
 
+        std::lock_guard<std::mutex> lock(m_init_lock);
         encoder_base::construct(factory);
+        m_symbol_storage = CHECK_NOTNULL(new uint8_t[data_size]);
+        m_thread = std::thread(std::bind(&encoder::thread_func, this));
 
         LOG(INFO) << "constructed new encoder";
-        CHECK_NE(data_size, 0);
-        m_symbol_storage = CHECK_NOTNULL(new uint8_t[data_size]);
-
-        /* use locks to prevent data race due to reordering */
-        std::lock_guard<std::mutex> queue_lock(m_queue_lock);
-        m_thread = std::thread(std::bind(&encoder::thread_func, this));
     }
 
     template<class Factory>
     void initialize(Factory &factory)
     {
+        std::lock_guard<std::mutex> lock(m_init_lock);
         encoder_base::initialize(factory);
 
         m_budget = source_budget(this->symbols(), m_e1, m_e2, m_e3);
