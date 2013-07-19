@@ -120,7 +120,7 @@ void encoder_map::add_req(struct nl_msg *msg, struct nlattr **attrs)
     std::lock_guard<std::mutex> lock(m_encoders_lock);
     enc = m_encoders[enc_id];
 
-    if (enc->uid() != uid)
+    if (!enc || enc->uid() != uid)
         return;
 
     enc->add_req(msg);
