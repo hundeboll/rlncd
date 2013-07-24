@@ -76,7 +76,7 @@ int main(int argc, char **argv)
         std::this_thread::sleep_for(interval);
 
     c->print();
-
+    i->stop();
     enc_map.reset();
     dec_map.reset();
     i.reset();

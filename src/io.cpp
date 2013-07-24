@@ -17,19 +17,7 @@ DECLARE_int32(e3);
 io::~io()
 {
     VLOG(LOG_INIT) << "destructor start";
-    std::unique_lock<std::mutex> write_lock(m_write_lock);
-    m_running = false;
-    m_write_cond.notify_all();
-    write_lock.unlock();
-
-    if (m_writer.joinable())
-        m_writer.join();
-
-    if (m_nlsock)
-        genl_send_simple(m_nlsock, family(), BATADV_HLP_C_UNSPEC, 1, 0);
-
-    if (m_reader.joinable())
-        m_reader.join();
+    stop();
 
     if (m_nlsock)
         nl_socket_free(m_nlsock);
@@ -43,11 +31,12 @@ io::~io()
     if (m_nlfamily)
         free(m_nlfamily);
 
-    write_lock.lock();
+    m_write_lock.lock();
     while (m_write_queue.size() > 0) {
         nlmsg_free(m_write_queue.top());
         m_write_queue.pop();
     }
+    m_write_lock.unlock();
 
     process_free_queue();
     VLOG(LOG_INIT) << "destructor end";
@@ -63,6 +52,23 @@ void io::start()
 
     std::lock_guard<std::mutex> write_lock(m_write_lock);
     m_writer = std::thread(std::bind(&io::write_thread, this));
+}
+
+void io::stop()
+{
+    m_write_lock.lock();
+    m_running = false;
+    m_write_cond.notify_all();
+    m_write_lock.unlock();
+
+    if (m_writer.joinable())
+        m_writer.join();
+
+    if (m_nlsock)
+        genl_send_simple(m_nlsock, family(), BATADV_HLP_C_UNSPEC, 1, 0);
+
+    if (m_reader.joinable())
+        m_reader.join();
 }
 
 void io::netlink_open()

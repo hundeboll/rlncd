@@ -64,6 +64,7 @@ class io : public counters_api
     }
     ~io();
     void start();
+    void stop();
     void netlink_open();
     void netlink_register();
     void write_lock();
