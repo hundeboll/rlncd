@@ -53,7 +53,7 @@ int main(int argc, char **argv)
     signal(SIGINT, sigint);
     signal(SIGTERM, sigint);
 
-    counters::pointer c(new counters);
+    counters_base::pointer c(new counters_base);
     io::pointer i(new io);
     encoder_map::pointer enc_map(new encoder_map);
     decoder_map::pointer dec_map(new decoder_map);

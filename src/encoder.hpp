@@ -4,6 +4,8 @@
 #include <kodo/rlnc/full_vector_codes.hpp>
 #include <kodo/storage_aware_generator.hpp>
 #include <kodo/shallow_symbol_storage.hpp>
+#include "kodo/rank_info.hpp"
+#include "kodo/payload_rank_encoder.hpp"
 
 #include <thread>
 #include <mutex>
@@ -30,6 +32,7 @@ template<class Field>
 class encoder_base
     : public
            // Payload Codec API
+           payload_rank_encoder<
            payload_encoder<
            // Codec Header API
            systematic_encoder<
@@ -44,6 +47,7 @@ class encoder_base
            zero_symbol_encoder<
            linear_block_encoder<
            storage_aware_encoder<
+           rank_info<
            // Coefficient Storage API
            coefficient_info<
            // Symbol Storage API
@@ -56,13 +60,13 @@ class encoder_base
            // Factory API
            final_coder_factory_pool<
            // Final type
-           encoder> > > > > > > > > > > > > > > > >
+           encoder> > > > > > > > > > > > > > > > > > >
 {};
 
 class encoder
   : public io_base,
     public counters_api,
-    public encoder_base<fifi::binary8>
+    public encoder_base<fifi::binary>
 {
     typedef std::chrono::high_resolution_clock timer;
     typedef timer::time_point timestamp;

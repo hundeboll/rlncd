@@ -1,6 +1,9 @@
 #pragma once
 
 #include <kodo/rlnc/full_vector_codes.hpp>
+#include <kodo/is_partial_complete.hpp>
+#include "kodo/rank_info.hpp"
+#include "kodo/payload_rank_decoder.hpp"
 #include <atomic>
 #include <thread>
 #include <mutex>
@@ -23,7 +26,9 @@ class decoder;
 template<class Field>
 class decoder_base
     : public
+             partial_decoding_tracker<
              // Payload API
+             payload_rank_decoder<
              payload_decoder<
              // Codec Header API
              systematic_decoder<
@@ -33,7 +38,8 @@ class decoder_base
              plain_symbol_id_reader<
              // Codec API
              aligned_coefficients_decoder<
-             linear_block_decoder<
+             forward_linear_block_decoder<
+             rank_info<
              // Coefficient Storage API
              coefficient_storage<
              coefficient_info<
@@ -48,13 +54,13 @@ class decoder_base
              final_coder_factory_pool<
              // Final type
              decoder
-                 > > > > > > > > > > > > > > >
+                 > > > > > > > > > > > > > > > > > >
 {};
 
 class decoder
   : public io_base,
     public counters_api,
-    public decoder_base<fifi::binary8>
+    public decoder_base<fifi::binary>
 {
     typedef std::chrono::high_resolution_clock timer;
     typedef timer::time_point timestamp;

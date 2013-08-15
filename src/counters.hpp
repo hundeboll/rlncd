@@ -18,7 +18,7 @@
 
 using namespace boost::interprocess;
 
-class counters {
+class counters_base {
     struct shm_remove
     {
         shm_remove() { shared_memory_object::remove(SHM_NAME); }
@@ -26,7 +26,7 @@ class counters {
     } m_remover;
 
   public:
-    typedef std::shared_ptr<counters> pointer;
+    typedef std::shared_ptr<counters_base> pointer;
     typedef allocator<char, managed_shared_memory::segment_manager>
         char_allocator;
     typedef basic_string<char, std::char_traits<char>, char_allocator>
@@ -45,7 +45,7 @@ class counters {
     shared_map *m_counter_map;
     std::mutex m_lock;
 
-    counters() :
+    counters_base() :
         m_segment(create_only, SHM_NAME, 65536),
         m_allocator(m_segment.get_segment_manager()),
         m_counter_map(m_segment.construct<shared_map>(SHM_MAP_NAME)
@@ -69,7 +69,7 @@ class counters {
 
 class counters_api
 {
-    counters::pointer m_counts;
+    counters_base::pointer m_counts;
     std::string m_group;
 
   protected:
@@ -85,12 +85,12 @@ class counters_api
     }
 
   public:
-    void counters(counters::pointer counts)
+    void counters(counters_base::pointer counts)
     {
         m_counts = counts;
     }
 
-    counters::pointer counters() const
+    counters_base::pointer counters() const
     {
         return m_counts;
     }
