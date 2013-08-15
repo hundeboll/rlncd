@@ -11,6 +11,7 @@
 #include "encoder_map.hpp"
 #include "decoder_map.hpp"
 #include "counters.hpp"
+#include "ctrl_tracker.hpp"
 
 DEFINE_string(interface, "bat0", "Name of interface to register");
 DEFINE_int32(symbols, 64, "The generation size, the number of packets "
@@ -54,6 +55,8 @@ int main(int argc, char **argv)
     signal(SIGTERM, sigint);
 
     counters_base::pointer c(new counters_base);
+    ctrl_tracker::pointer ack_tracker(new ctrl_tracker);
+    ctrl_tracker::pointer req_tracker(new ctrl_tracker);
     io::pointer i(new io);
     encoder_map::pointer enc_map(new encoder_map);
     decoder_map::pointer dec_map(new decoder_map);
@@ -61,8 +64,11 @@ int main(int argc, char **argv)
     enc_map->set_io(i);
     enc_map->counters(c);
     enc_map->init(FLAGS_encoders);
+
     dec_map->set_io(i);
     dec_map->counters(c);
+    dec_map->ctrl_trackers(ctrl_tracker_api::ACK, ack_tracker);
+    dec_map->ctrl_trackers(ctrl_tracker_api::REQ, req_tracker);
 
     i->counters(c);
     i->set_encoder_map(enc_map);
@@ -75,6 +81,8 @@ int main(int argc, char **argv)
     while (running)
         std::this_thread::sleep_for(interval);
 
+    std::cout << "acks: " << ack_tracker->waiting() << std::endl;
+    std::cout << "reqs: " << req_tracker->waiting() << std::endl;
     c->print();
     i->stop();
     enc_map.reset();

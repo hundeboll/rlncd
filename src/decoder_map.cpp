@@ -8,6 +8,7 @@ decoder::pointer decoder_map::create_decoder(uint8_t id, uint8_t block)
     dec->block(block);
     dec->set_io(m_io);
     dec->counters(counters());
+    dec->ctrl_trackers(ctrl_trackers());
 
     return dec;
 }
@@ -34,6 +35,7 @@ decoder::pointer decoder_map::get_decoder(uint8_t id, uint8_t block)
         return decoder::pointer();
 
     m_decoders[id] = create_decoder(id, block);
+    ack_done();
 
     return m_decoders[id];
 }

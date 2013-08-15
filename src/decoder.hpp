@@ -13,6 +13,7 @@
 #include "io.hpp"
 #include "counters.hpp"
 #include "queue.hpp"
+#include "ctrl_tracker.hpp"
 #include "systematic_decoder.hpp"
 
 DECLARE_double(decoder_timeout);
@@ -60,6 +61,7 @@ class decoder_base
 class decoder
   : public io_base,
     public counters_api,
+    public ctrl_tracker_api,
     public decoder_base<fifi::binary>
 {
     typedef std::chrono::high_resolution_clock timer;

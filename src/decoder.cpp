@@ -203,6 +203,7 @@ void decoder::process_decoder()
         VLOG(LOG_GEN) << "decoded (block: " << block() << ")";
         m_decoded = true;
         counters_increment("decoded");
+        ack_wait();
 
         for (; budget >= 1; --budget)
             send_ack();
@@ -234,6 +235,7 @@ void decoder::process_timer()
         for (; budget >= 1; --budget)
             send_req();
 
+        req_wait();
         m_req_seq++;
         m_timestamp = timer::now();
         m_timeout -= m_req_timeout;
@@ -246,8 +248,10 @@ void decoder::process_timer()
         return;
     }
 
-    if (diff.count() >= m_timeout)
+    if (diff.count() >= m_timeout) {
+        ack_done();
         m_idle = true;
+    }
 }
 
 void decoder::free_queue()
@@ -298,6 +302,7 @@ void decoder::add_enc(struct nl_msg *msg)
 {
     std::lock_guard<std::mutex> lock(m_queue_lock);
     m_enc_count++;
+    req_done();
     add_msg(ENC_PACKET, msg);
 }
 

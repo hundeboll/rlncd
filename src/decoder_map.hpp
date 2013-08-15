@@ -7,13 +7,14 @@
 #include "io.hpp"
 #include "decoder.hpp"
 #include "counters.hpp"
+#include "ctrl_tracker.hpp"
 
 using kodo::decoder;
 
 DECLARE_int32(symbol_size);
 DECLARE_int32(symbols);
 
-class decoder_map : public io_base, public counters_api
+class decoder_map : public io_base, public counters_api, public ctrl_tracker_api
 {
     std::vector<decoder::pointer> m_decoders;
     std::mutex m_decoders_lock;
