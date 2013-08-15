@@ -25,23 +25,33 @@ def build(bld):
     )
 
     bld(
+            export_includes=[bld.env.BOOST],
+            name='boost'
+    )
+
+    bld(
+            use=['boost'],
             export_includes=[bld.env.KODO, bld.env.FIFI, bld.env.SAK],
             name='kodo'
     )
 
     bld(
-            use=['io', 'gflags', 'glog'],
+            use=['io'],
+            uselib=['gflags', 'glog'],
             name='libs'
     )
 
-    bld.program(
+    src = bld.program(
             target='source',
             source='source.cpp',
             use=['libs', 'kodo', 'rt', 'pthread']
     )
 
+    if hasattr(bld.env, 'PROFILER'):
+        src.use.append('profiler')
+
     bld.program(
             target='counters',
             source='counters.cpp',
-            use=['rt', 'pthread'],
+            use=['rt', 'pthread', 'boost'],
     )

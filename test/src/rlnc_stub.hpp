@@ -94,22 +94,22 @@ class genl_family_stub
         std::string name("batman_adv");
 
         m_nlcb = nl_cb_alloc(NL_CB_CUSTOM);
-        ASSERT_TRUE(m_nlcb);
+        EXPECT_TRUE(m_nlcb);
 
         m_nlsock = nl_socket_alloc_cb(m_nlcb);
-        ASSERT_TRUE(m_nlsock);
+        EXPECT_TRUE(m_nlsock);
 
-        ASSERT_EQ(genl_connect(m_nlsock), 0);
+        EXPECT_EQ(genl_connect(m_nlsock), 0);
 
-        ASSERT_EQ(0, nl_socket_set_buffer_size(m_nlsock, 1048576, 1048576));
+        EXPECT_EQ(0, nl_socket_set_buffer_size(m_nlsock, 1048576, 1048576));
 
-        ASSERT_EQ(0, genl_ctrl_alloc_cache(m_nlsock, &m_nlcache));
+        EXPECT_EQ(0, genl_ctrl_alloc_cache(m_nlsock, &m_nlcache));
 
         m_nlfamily = genl_ctrl_search_by_name(m_nlcache, name.c_str());
-        ASSERT_TRUE(m_nlfamily);
+        EXPECT_TRUE(m_nlfamily);
         m_nlfamily_id = genl_family_get_id(m_nlfamily);
 
-        ASSERT_EQ(0, nl_cb_set(m_nlcb, NL_CB_MSG_IN, NL_CB_CUSTOM, parse_cb,
+        EXPECT_EQ(0, nl_cb_set(m_nlcb, NL_CB_MSG_IN, NL_CB_CUSTOM, parse_cb,
                                this));
 
         genl_send_simple(m_nlsock, m_nlfamily_id, BATADV_HLP_C_REGISTER, 1, 0);

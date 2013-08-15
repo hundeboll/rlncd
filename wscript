@@ -25,7 +25,7 @@ def configure(cfg):
     if not cfg.env.CXX:
         cfg.env.append_unique('CXX', ['clang++'])
 
-    cfg.load('compiler_cxx boost')
+    cfg.load('compiler_cxx')
 
     #
     # kodo
@@ -52,7 +52,7 @@ def configure(cfg):
     sak = bundle.ant_glob('sak*', dir=True)
     if not sak:
         cfg.fatal('sak not found in bundle path: ' + cfg.options.kodo_bundle)
-    cfg.env.SAK = sak[-1].abspath() + '/src'
+    cfg.env.SAK = sak[-1].abspath() + '/master/src'
     cfg.end_msg(cfg.env.SAK)
 
     #
@@ -62,24 +62,44 @@ def configure(cfg):
     fifi = bundle.ant_glob('fifi*', dir=True)
     if not fifi:
         cfg.fatal('fifi not found in bundle path: ' + cfg.options.kodo_bundle)
-    cfg.env.FIFI = fifi[-1].abspath() + '/src'
+    cfg.env.FIFI = fifi[-1].abspath() + '/master/src'
     cfg.end_msg(cfg.env.FIFI)
+
+    #
+    # boost
+    #
+    cfg.start_msg('Checking boost include path')
+    boost = bundle.ant_glob('boost*', dir=True)
+    if not boost:
+        cfg.fatal('boost not found in bundle path: ' + cfg.options.kodo_bundle)
+    cfg.env.BOOST = boost[-1].abspath() + '/master'
+    cfg.end_msg(cfg.env.BOOST)
 
     #
     # libs
     #
     cfg.check_boost()
     cfg.check(features='cxx cxxprogram', lib='pthread', uselib_store='pthread')
-    cfg.check(features='cxx cxxprogram', lib='rt', uselib_store='rt')
-    cfg.check(features='cxx cxxprogram', lib='nl-3', uselib_store='nl-3')
-    cfg.check(features='cxx cxxprogram', lib='nl-genl-3', uselib_store='nl-genl-3')
-    cfg.check(features='cxx cxxprogram', lib='gflags', uselib_store='gflags')
-    cfg.check(features='cxx cxxprogram', lib='glog', uselib_store='glog')
-    cfg.check(features='cxx cxxprogram', lib='gtest', uselib_store='gtest')
+    cfg.check(features='cxx cxxprogram', lib='rt')
+    cfg.check(features='cxx cxxprogram', lib='nl-3')
+    cfg.check(features='cxx cxxprogram', lib='nl-genl-3')
+    cfg.check(features='cxx cxxprogram', lib='gflags')
+    cfg.check(features='cxx cxxprogram', lib='glog')
+    cfg.check(features='cxx cxxprogram', lib='gtest', use='pthread')
     if cfg.options.profiler:
         cfg.check(features='cxx cxxprogram', lib='profiler', uselib_store='profiler')
+        cfg.env.append_unique('LINKFLAGS', ['-lprofiler'])
 
-    cfg.env.append_unique('CXXFLAGS', ['-std=c++11', '-g'])
+    cfg.env.append_unique('CXXFLAGS', ['-std=c++11', 
+                                       '-g',
+                                       '-O2',
+                                       '-ftree-vectorize',
+                                       '-finline-functions'])
+
+    if 'c++' in str(cfg.env.CXX) and cfg.env.CC_VERSION <= ('4', '8', '0'):
+        cfg.env.append_unique('CXXFLAGS', ['-Wno-narrowing', '-D_GLIBCXX_USE_NANOSLEEP',
+                                           '-march=armv6j', '-mfpu=vfp', '-mfloat-abi=hard'])
+
     env = cfg.get_env()
 
     cfg.setenv('tsan', env)
@@ -91,6 +111,20 @@ def configure(cfg):
     cfg.env.append_unique('LINKFLAGS', ['-fsanitize=address', '-fno-omit-frame-pointer'])
 
 def build(bld):
+    libdir = [bld.env.LIBDIR]
+    bld.read_shlib('pthread', paths=libdir)
+    bld.read_shlib('rt', paths=libdir)
+    bld.read_stlib('glog', paths=libdir)
+    bld.read_stlib('gflags', paths=libdir)
+    bld.read_shlib('gtest', paths=libdir)
+
+    if bld.env.DEST_CPU == 'arm':
+        bld.read_stlib('nl-3', paths=libdir)
+        bld.read_stlib('nl-genl-3', paths=libdir)
+    else:
+        bld.read_shlib('nl-3')
+        bld.read_shlib('nl-genl-3')
+
     bld(
             includes='./src',
             export_includes='./src',
