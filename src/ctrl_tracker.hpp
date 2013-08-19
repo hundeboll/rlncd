@@ -121,6 +121,7 @@ class ctrl_tracker_api
 
     void ack_done()
     {
+        VLOG(LOG_CTRL) << "ack done";
         done(ACK);
     }
 
@@ -136,6 +137,7 @@ class ctrl_tracker_api
 
     void req_done()
     {
+        VLOG(LOG_CTRL) << "req done";
         done(REQ);
     }
 
