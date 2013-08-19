@@ -71,7 +71,7 @@ class ctrl_tracker_api
 
         m_durations[t].first++;
         m_durations[t].second += diff.count();
-        VLOG(LOG_CTRL) << "avg ctrl rtt: "
+        VLOG(LOG_CTRL) << "avg " << t << " rtt: "
                        << (m_durations[t].second / m_durations[t].first)
                        << " ms";
     }
@@ -121,7 +121,6 @@ class ctrl_tracker_api
 
     void ack_done()
     {
-        VLOG(LOG_CTRL) << "ack done";
         done(ACK);
     }
 
@@ -137,7 +136,6 @@ class ctrl_tracker_api
 
     void req_done()
     {
-        VLOG(LOG_CTRL) << "req done";
         done(REQ);
     }
 
