@@ -19,9 +19,9 @@ DEFINE_int32(symbols, 64, "The generation size, the number of packets "
 DEFINE_int32(symbol_size, 1454, "The payload size without RLNC overhead.");
 DEFINE_bool(benchmark, false, "Bounce frames upon reception");
 DEFINE_int32(encoders, 2, "Number of concurrent encoder.");
-DEFINE_double(encoder_timeout, 1, "Time to wait for more packets before "
+DEFINE_double(encoder_timeout, 10, "Time to wait for more packets before "
                                   "dropping encoder generation.");
-DEFINE_double(decoder_timeout, 1, "Time to wait for more packets before "
+DEFINE_double(decoder_timeout, 10, "Time to wait for more packets before "
                                   "dropping decoder generation.");
 DEFINE_double(req_timeout, .5, "Time to wait for more packets before "
                                "requesting more data");
@@ -81,8 +81,10 @@ int main(int argc, char **argv)
     while (running)
         std::this_thread::sleep_for(interval);
 
-    std::cout << "acks: " << ack_tracker->waiting() << std::endl;
-    std::cout << "reqs: " << req_tracker->waiting() << std::endl;
+    std::cout << "ack avg: ";
+    ack_tracker->print_rtt();
+    std::cout << "req avg: ";
+    req_tracker->print_rtt();
     c->print();
     i->stop();
     enc_map.reset();

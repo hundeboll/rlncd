@@ -15,10 +15,8 @@ decoder::pointer decoder_map::create_decoder(uint8_t id, uint8_t block)
 
 decoder::pointer decoder_map::get_decoder(uint8_t id, uint8_t block)
 {
-    uint8_t max = id + 1;
-
-    if (m_decoders.size() < max) {
-        m_decoders.resize(max);
+    if (m_decoders.size() < id + 1) {
+        m_decoders.resize(id + 1);
         m_decoders[id] = create_decoder(id, block);
         return m_decoders[id];
     }
@@ -34,6 +32,7 @@ decoder::pointer decoder_map::get_decoder(uint8_t id, uint8_t block)
     if (m_decoders[id]->block() > block && block != 0)
         return decoder::pointer();
 
+    m_decoders[id] = decoder::pointer();
     m_decoders[id] = create_decoder(id, block);
 
     return m_decoders[id];

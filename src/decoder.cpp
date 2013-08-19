@@ -228,23 +228,24 @@ void decoder::process_timer()
 {
     double budget = source_budget(1, ONE, ONE, FLAGS_e3*2.55);
     resolution diff;
+    size_t req_to = req_timeout(), ack_to = ack_timeout();
 
     diff = std::chrono::duration_cast<resolution>(timer::now() - m_timestamp);
 
-    if (diff.count() >= m_req_timeout && !this->is_partial_complete()) {
+    if (diff.count() >= req_to && !this->is_partial_complete()) {
         for (; budget >= 1; --budget)
             send_req();
 
         req_wait();
         m_req_seq++;
         m_timestamp = timer::now();
-        m_timeout -= m_req_timeout;
+        m_timeout -= req_to;
         return;
-    } else if (diff.count() >= m_ack_timeout && this->is_partial_complete()) {
+    } else if (diff.count() >= ack_to && this->is_partial_complete()) {
         for (; budget >= 1; --budget)
             send_ack();
         m_timestamp = timer::now();
-        m_timeout -= m_ack_timeout;
+        m_timeout -= ack_to;
         return;
     }
 
