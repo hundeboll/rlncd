@@ -56,6 +56,7 @@ void encoder_map::next_encoder()
 
     m_current_encoder = m_free_encoders.front();
     m_free_encoders.pop_front();
+    m_encoders[m_current_encoder] = encoder::pointer();
     m_encoders[m_current_encoder] = m_factory.build();
     m_encoders[m_current_encoder]->block(m_block_count++);
     m_encoders[m_current_encoder]->enc_id(m_current_encoder);
