@@ -66,6 +66,7 @@ class ctrl_tracker_api
     {
         using std::chrono::duration_cast;
 
+        resolution diff;
         diff = duration_cast<resolution>(timer::now() - m_timestamps[t]);
 
         m_durations[t].first++;
@@ -92,7 +93,6 @@ class ctrl_tracker_api
 
     void done(TYPE t)
     {
-        resolution diff;
         std::lock_guard<std::mutex> lock(m_locks[ACK]);
 
         if (!m_trackers[t])
