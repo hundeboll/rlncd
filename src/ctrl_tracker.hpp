@@ -19,7 +19,7 @@ class ctrl_tracker
   public:
     typedef std::shared_ptr<ctrl_tracker> pointer;
 
-    ctrl_tracker() : m_rtt(16), m_avg(16, 100)
+    ctrl_tracker(size_t init_timeout) : m_rtt(16), m_avg(16, init_timeout)
     {}
 
     void wait()
