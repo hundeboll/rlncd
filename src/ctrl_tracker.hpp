@@ -71,6 +71,9 @@ class ctrl_tracker_api
 
         m_durations[t].first++;
         m_durations[t].second += diff.count();
+        VLOG(LOG_CTRL) << "diff " << t << " rtt: "
+                       << diff.count() << " ("
+                       << m_trackers[t]->waiting() << ")";
         VLOG(LOG_CTRL) << "avg " << t << " rtt: "
                        << (m_durations[t].second / m_durations[t].first)
                        << " ms";
