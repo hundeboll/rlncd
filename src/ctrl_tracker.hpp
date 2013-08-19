@@ -62,6 +62,19 @@ class ctrl_tracker_api
     std::vector<timestamp> m_timestamps;
     std::vector<std::pair<size_t, size_t>> m_durations;
 
+    void update_timestamps(TYPE t)
+    {
+        using std::chrono::duration_cast;
+
+        diff = duration_cast<resolution>(timer::now() - m_timestamps[t]);
+
+        m_durations[t].first++;
+        m_durations[t].second += diff.count();
+        VLOG(LOG_CTRL) << "avg ctrl rtt: "
+                       << (m_durations[t].second / m_durations[t].first)
+                       << " ms";
+    }
+
     void wait(TYPE t)
     {
         std::lock_guard<std::mutex> lock(m_locks[ACK]);
@@ -79,8 +92,6 @@ class ctrl_tracker_api
 
     void done(TYPE t)
     {
-        using std::chrono::duration_cast;
-
         resolution diff;
         std::lock_guard<std::mutex> lock(m_locks[ACK]);
 
@@ -90,14 +101,8 @@ class ctrl_tracker_api
         if (m_states[t] == ACTIVE)
             return;
 
-        diff = duration_cast<resolution>(timer::now() - m_timestamps[t]);
         m_trackers[t]->done();
         m_states[t] = ACTIVE;
-        m_durations[t].first++;
-        m_durations[t].second += diff.count();
-        VLOG(LOG_CTRL) << "avg ctrl rtt: "
-                       << (m_durations[t].second / m_durations[t].first)
-                       << " ms";
     }
 
     size_t waiting(TYPE t)
