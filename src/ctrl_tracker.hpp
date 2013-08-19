@@ -12,6 +12,8 @@
 class ctrl_tracker
 {
     std::atomic<size_t> m_count = {0};
+    std::pair<size_t, size_t> m_rtt;
+    std::mutex m_rtt_lock;
 
   public:
     typedef std::shared_ptr<ctrl_tracker> pointer;
@@ -32,6 +34,19 @@ class ctrl_tracker
     size_t waiting()
     {
         return m_count;
+    }
+
+    void add_rtt(size_t rtt)
+    {
+        std::lock_guard<std::mutex> lock(m_rtt_lock);
+        m_rtt.first++;
+        m_rtt.second += rtt;
+    }
+
+    size_t get_rtt()
+    {
+        std::lock_guard<std::mutex> lock(m_rtt_lock);
+        return m_rtt.second/m_rtt.first;
     }
 };
 
@@ -60,7 +75,6 @@ class ctrl_tracker_api
     std::vector<bool> m_states;
     std::vector<std::mutex> m_locks;
     std::vector<timestamp> m_timestamps;
-    std::vector<std::pair<size_t, size_t>> m_durations;
 
     void update_timestamps(TYPE t)
     {
@@ -69,13 +83,12 @@ class ctrl_tracker_api
         resolution diff;
         diff = duration_cast<resolution>(timer::now() - m_timestamps[t]);
 
-        m_durations[t].first++;
-        m_durations[t].second += diff.count();
+        m_trackers[t]->add_rtt(diff.count());
         VLOG(LOG_CTRL) << "diff " << t << " rtt: "
                        << diff.count() << " ("
                        << m_trackers[t]->waiting() << ")";
         VLOG(LOG_CTRL) << "avg " << t << " rtt: "
-                       << (m_durations[t].second / m_durations[t].first)
+                       << m_trackers[t]->get_rtt()
                        << " ms";
     }
 
@@ -151,7 +164,6 @@ class ctrl_tracker_api
     ctrl_tracker_api() :
         m_trackers(TYPE_NUM),
         m_locks(TYPE_NUM),
-        m_durations(TYPE_NUM),
         m_timestamps(TYPE_NUM),
         m_states(TYPE_NUM, ACTIVE)
     {
