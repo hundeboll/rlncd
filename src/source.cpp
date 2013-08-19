@@ -55,8 +55,8 @@ int main(int argc, char **argv)
     signal(SIGTERM, sigint);
 
     counters_base::pointer c(new counters_base);
-    ctrl_tracker::pointer ack_tracker(new ctrl_tracker(FLAGS_ack_timeout));
-    ctrl_tracker::pointer req_tracker(new ctrl_tracker(FLAGS_req_timeout));
+    ctrl_tracker::pointer ack_tracker(new ctrl_tracker(FLAGS_ack_timeout*1000));
+    ctrl_tracker::pointer req_tracker(new ctrl_tracker(FLAGS_req_timeout*1000));
     io::pointer i(new io);
     encoder_map::pointer enc_map(new encoder_map);
     decoder_map::pointer dec_map(new decoder_map);
