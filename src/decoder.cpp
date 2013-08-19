@@ -246,6 +246,7 @@ void decoder::process_timer()
             send_ack();
         m_timestamp = timer::now();
         m_timeout -= ack_to;
+        ack_wait();
         return;
     }
 

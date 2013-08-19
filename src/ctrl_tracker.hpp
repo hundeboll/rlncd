@@ -86,18 +86,19 @@ class ctrl_tracker_api
     typedef std::chrono::duration<resolution> duration;
 
     std::vector<ctrl_tracker::pointer> m_trackers;
+    std::vector<size_t> m_repeats;
     std::vector<bool> m_states;
     std::vector<std::mutex> m_locks;
     std::vector<timestamp> m_timestamps;
 
-    void update_timestamps(TYPE t)
+    void update_timeouts(TYPE t)
     {
         using std::chrono::duration_cast;
 
         resolution diff;
         diff = duration_cast<resolution>(timer::now() - m_timestamps[t]);
 
-        m_trackers[t]->add_rtt(diff.count());
+        m_trackers[t]->add_rtt(diff.count()/m_repeats[t]);
         VLOG(LOG_CTRL) << "diff " << t << " rtt: "
                        << diff.count() << " ("
                        << m_trackers[t]->waiting() << ")";
@@ -113,10 +114,13 @@ class ctrl_tracker_api
         if (!m_trackers[t])
             return;
 
-        if (m_states[t] == WAITING)
+        if (m_states[t] == WAITING) {
+            m_repeats[t]++;
             return;
+        }
 
         m_trackers[t]->wait();
+        m_repeats[t] = 1;
         m_states[t] = WAITING;
         m_timestamps[t] = timer::now();
     }
@@ -133,7 +137,7 @@ class ctrl_tracker_api
 
         m_trackers[t]->done();
         m_states[t] = ACTIVE;
-        update_timestamps(t);
+        update_timeouts(t);
     }
 
     size_t waiting(TYPE t)
@@ -177,18 +181,19 @@ class ctrl_tracker_api
     size_t ack_timeout()
     {
         std::lock_guard<std::mutex> lock(m_locks[ACK]);
-        return m_trackers[ACK]->get_rtt();
+        return m_trackers[ACK]->get_rtt()*2;
     }
 
     size_t req_timeout()
     {
         std::lock_guard<std::mutex> lock(m_locks[REQ]);
-        return m_trackers[REQ]->get_rtt();
+        return m_trackers[REQ]->get_rtt()*2;
     }
 
   public:
     ctrl_tracker_api() :
         m_trackers(TYPE_NUM),
+        m_repeats(TYPE_NUM),
         m_locks(TYPE_NUM),
         m_timestamps(TYPE_NUM),
         m_states(TYPE_NUM, ACTIVE)
