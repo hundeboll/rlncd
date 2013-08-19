@@ -98,7 +98,7 @@ class ctrl_tracker_api
         resolution diff;
         diff = duration_cast<resolution>(timer::now() - m_timestamps[t]);
 
-        m_trackers[t]->add_rtt(diff.count()/m_repeats[t]);
+        m_trackers[t]->add_rtt(diff.count());
         VLOG(LOG_CTRL) << "diff " << t << " rtt: "
                        << diff.count() << " ("
                        << m_trackers[t]->waiting() << ")";
