@@ -125,6 +125,7 @@ class decoder
         std::lock_guard<std::mutex> lock(m_init_lock);
         decoder_base::initialize(factory);
         counters_increment("generations");
+        ack_done();
 
         m_decoded = false;
         m_idle = false;

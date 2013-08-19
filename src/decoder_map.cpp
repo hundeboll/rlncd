@@ -35,7 +35,6 @@ decoder::pointer decoder_map::get_decoder(uint8_t id, uint8_t block)
         return decoder::pointer();
 
     m_decoders[id] = create_decoder(id, block);
-    ack_done();
 
     return m_decoders[id];
 }

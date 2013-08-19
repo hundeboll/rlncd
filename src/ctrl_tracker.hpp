@@ -78,7 +78,7 @@ class ctrl_tracker_api
 
     void wait(TYPE t)
     {
-        std::lock_guard<std::mutex> lock(m_locks[ACK]);
+        std::lock_guard<std::mutex> lock(m_locks[t]);
 
         if (!m_trackers[t])
             return;
@@ -93,7 +93,7 @@ class ctrl_tracker_api
 
     void done(TYPE t)
     {
-        std::lock_guard<std::mutex> lock(m_locks[ACK]);
+        std::lock_guard<std::mutex> lock(m_locks[t]);
 
         if (!m_trackers[t])
             return;
@@ -108,7 +108,7 @@ class ctrl_tracker_api
 
     size_t waiting(TYPE t)
     {
-        std::lock_guard<std::mutex> lock(m_locks[ACK]);
+        std::lock_guard<std::mutex> lock(m_locks[t]);
 
         return m_trackers[t] ? m_trackers[t]->waiting() : 0;
     }
