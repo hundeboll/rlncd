@@ -66,7 +66,7 @@ class encoder_base
 class encoder
   : public io_base,
     public counters_api,
-    public encoder_base<fifi::binary>
+    public encoder_base<fifi::binary8>
 {
     typedef std::chrono::high_resolution_clock timer;
     typedef timer::time_point timestamp;
