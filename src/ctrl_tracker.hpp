@@ -103,6 +103,7 @@ class ctrl_tracker_api
 
         m_trackers[t]->done();
         m_states[t] = ACTIVE;
+        update_timestamps(t);
     }
 
     size_t waiting(TYPE t)
