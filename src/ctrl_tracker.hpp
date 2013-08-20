@@ -12,14 +12,14 @@
 class ctrl_tracker
 {
     size_t m_count = {0};
-    std::vector<std::pair<size_t, size_t>> m_rtt;
-    std::vector<size_t> m_avg;
+    std::pair<size_t, size_t> m_rtt;
+    size_t m_avg;
     std::mutex m_lock;
 
   public:
     typedef std::shared_ptr<ctrl_tracker> pointer;
 
-    ctrl_tracker(size_t init_timeout) : m_rtt(16), m_avg(16, init_timeout)
+    ctrl_tracker(size_t init_timeout) : m_avg(init_timeout)
     {}
 
     void wait()
@@ -45,22 +45,14 @@ class ctrl_tracker
     void add_rtt(size_t rtt)
     {
         std::lock_guard<std::mutex> lock(m_lock);
-        m_rtt[m_count].first++;
-        m_rtt[m_count].second += rtt;
-        m_avg[m_count] = m_rtt[m_count].second / m_rtt[m_count].first;
+        m_rtt.first++;
+        m_rtt.second += rtt;
+        m_avg = m_rtt.second / m_rtt.first;
     }
 
     size_t get_rtt()
     {
-        return m_avg[m_count];
-    }
-
-    void print_rtt()
-    {
-        std::cout << m_avg.size() << std::endl;
-        for (auto i : m_avg)
-            std::cout << i << ", ";
-        std::cout << std::endl;
+        return m_avg;
     }
 };
 
@@ -181,13 +173,13 @@ class ctrl_tracker_api
     size_t ack_timeout()
     {
         std::lock_guard<std::mutex> lock(m_locks[ACK]);
-        return m_trackers[ACK]->get_rtt()*2;
+        return m_trackers[ACK]->get_rtt()*1.5;
     }
 
     size_t req_timeout()
     {
         std::lock_guard<std::mutex> lock(m_locks[REQ]);
-        return m_trackers[REQ]->get_rtt()*2;
+        return m_trackers[REQ]->get_rtt();
     }
 
   public:

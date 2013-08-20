@@ -81,10 +81,8 @@ int main(int argc, char **argv)
     while (running)
         std::this_thread::sleep_for(interval);
 
-    std::cout << "ack avg: ";
-    ack_tracker->print_rtt();
-    std::cout << "req avg: ";
-    req_tracker->print_rtt();
+    std::cout << "ack avg: " << ack_tracker->get_rtt() << std::endl;
+    std::cout << "req avg: " << req_tracker->get_rtt() << std::endl;
     c->print();
     i->stop();
     enc_map.reset();
