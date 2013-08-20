@@ -139,6 +139,17 @@ class ctrl_tracker_api
         return m_trackers[t] ? m_trackers[t]->waiting() : 0;
     }
 
+    size_t timeout(TYPE t)
+    {
+        std::lock_guard<std::mutex> lock(m_locks[t]);
+        size_t blocked = 1;
+
+        for (auto i : m_trackers)
+            blocked += i->waiting();
+
+        return m_trackers[t]->get_rtt()/blocked;
+    }
+
   protected:
     void ack_wait()
     {
@@ -172,14 +183,12 @@ class ctrl_tracker_api
 
     size_t ack_timeout()
     {
-        std::lock_guard<std::mutex> lock(m_locks[ACK]);
-        return m_trackers[ACK]->get_rtt()*1.5;
+        return timeout(ACK)*2;
     }
 
     size_t req_timeout()
     {
-        std::lock_guard<std::mutex> lock(m_locks[REQ]);
-        return m_trackers[REQ]->get_rtt();
+        return timeout(REQ)*2;
     }
 
   public:
